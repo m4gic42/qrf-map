@@ -153,7 +153,9 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 /* floating selection card, top-right corner of the map */
 #card{
   position:absolute;top:calc(var(--band-h) + 16px);right:16px;z-index:2;
-  width:min(320px, calc(100% - 32px));max-height:calc(100% - 32px - var(--band-h));overflow-y:auto;
+  /* as narrow as its widest unbreakable piece (a line of formulas), within 300–420px */
+  width:min-content;min-width:min(300px, calc(100% - 32px));max-width:min(420px, calc(100% - 32px));
+  max-height:calc(100% - 32px - var(--band-h));overflow-y:auto;
   transition:top var(--slide) var(--ease),max-height var(--slide) var(--ease);
   background:var(--paper);border:2px solid var(--ink);border-radius:10px;
   box-shadow:4px 4px 0 var(--shadow);padding:14px 16px 16px;
@@ -172,10 +174,17 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 #min:hover{color:var(--ink)}
 #min[aria-expanded="false"] svg{transform:rotate(180deg)}
 #card.min{padding:10px 70px 10px 16px}
-#card.min #card-title,#card.min .note,#card.min #reset{display:none}
+#card.min #card-title,#card.min .note,#card.min .defs,#card.min #reset{display:none}
 #card.min #detail strong{margin:0}
 #detail{font-size:12.5px;color:var(--ink-soft);white-space:pre-line}   /* a \n in a note starts a new line */
 #detail strong{color:var(--ink);font-weight:700;display:block;margin-bottom:3px;font-size:13px}
+/* definitions of the symbols in the note: one small run-on line below a dashed rule */
+#detail .defs{display:block;margin-top:8px;padding-top:6px;border-top:1.5px dashed var(--rule);font-size:11.5px;line-height:1.6;
+  padding-left:5ch;text-indent:-5ch}   /* hanging indent: wrapped lines start under the first definition, not under "with " */
+#detail .defs span{white-space:nowrap;text-indent:0}
+/* a note's line of formulas stays whole where the card is a corner box (it sets the card's width);
+   on phones the card has the screen's width and the line wraps */
+@media (min-width:821px) and (min-height:521px){ #detail .eqs{white-space:nowrap} }
 #reset{
   font:inherit;font-size:12.5px;margin-top:14px;padding:6px 12px;cursor:pointer;
   background:var(--paper);color:var(--ink);
@@ -255,7 +264,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   /* the selection card is a strip along the bottom; the route is fitted above it */
   #card{
     /* the whole note is always shown; scrolling is only a last resort for a note taller than the screen */
-    top:auto;bottom:0;left:0;right:0;width:auto;max-height:calc(100% - 48px);
+    top:auto;bottom:0;left:0;right:0;width:auto;min-width:0;max-width:none;max-height:calc(100% - 48px);
     border-width:2px 0 0;border-radius:14px 14px 0 0;box-shadow:none;padding:12px 16px 14px;
   }
   #reset{margin-top:10px}
@@ -276,7 +285,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 /* short and wide (phone held sideways): the card is a panel down the right edge */
 @media (max-height:520px) and (min-width:821px){
   #card{
-    top:var(--band-h);right:0;bottom:0;width:min(300px, 38%);max-height:none;
+    top:var(--band-h);right:0;bottom:0;width:min(320px, 40%);min-width:0;max-width:none;max-height:none;
     border-width:0 0 0 2px;border-radius:0;box-shadow:none;padding:12px 14px 14px;
   }
   #card.min{bottom:auto;border-width:0 0 2px 2px;border-radius:0 0 0 10px}
@@ -293,7 +302,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 
     <section class="how">
       <h2>How it works</h2>
-      <p class="lede">Every path from the top down to a framework is one consistent set of choices. Click any box to isolate the route it belongs to.</p>
+      <p class="lede">Every path from the top down to a framework is one consistent set of choices. Click <b>any box</b> to isolate the follwing and past route.</p>
     </section>
 
     <!-- on small screens the three legends fold to their heading when the band would not fit -->
@@ -394,53 +403,68 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
        x, y  : position on the map (y grows downward). Rows are
                y = 40 (root), 220 (TPS, element II), 380 (element I),
                520 (element III), 680 (approaches).
-       note  : longer text shown in the sidebar when the box is clicked.
+       note  : longer text shown in the sidebar when the box is clicked. "\n" starts a new line;
+               "~" is a non-breaking space, as in LaTeX; hyphenated words never split. A line that starts with "$" (formulas
+               only) is never broken on laptops: the card widens to fit it, up to 420px.
+       title : (optional) title of the card, with LaTeX in $...$; without it the label is used
+               (labels are canvas text on the map, so they cannot hold LaTeX).
+       defs  : (optional) keys of DEFS (below N) whose definitions are listed under the note.
        width, font (optional) : override SIZE for this box only (width is then fixed).
   */
   var N = [
-    {id:'R',  label:'External Hilbert space Fantastic', kind:'root', x:1130, y:40,
-     note:'The starting point: Eve\'s description for symmetry-based or the kinematical Hilbert space for gauge-based.\nLocal TPS: $\\mathcal{A}_{i}=\\langle\\hat{x}_i,\\hat{p}_i\\rangle\\quad\\forall i.$'},
+    {id:'R',  label:'External Hilbert space', kind:'root', x:1130, y:40,
+     note:'The starting point: \nEve\'s~description~for~symmetry-based or the kinematical Hilbert space $\\mathcal{H}^{\\mathrm{kin}}$ for gauge-based.\nLocal TPS: $\\mathcal{A}_{i}=\\langle\\hat{x}_i,\\hat{p}_i\\rangle\\quad\\forall i.$'},
 
     /* element (II): TPS, from tab:tps_choices */
     {id:'T_rprm', label:'Rel. pos.\nrel. mom.', kind:'tps', x:180, y:220,
-     note:'Positions relative to $k$, momenta relative to $j$. Local Algebras (TPS): $\\mathcal{A}_{\\mathrm{CM}} = \\langle \\hat{x}_{\\mathrm{CM}}, \\hat{P} \\rangle$, $\\mathcal{A}_{A|A} = \\langle \\hat{r}_{j|k}, \\hat{p}_{k|j} \\rangle$, $\\mathcal{A}_{i|A} = \\langle \\hat{r}_{i|k}, \\hat{p}_{i|j} \\rangle$.'},
+     note:'Positions relative to $k$, momenta relative to $j$. Local~Algebras~(TPS):\n$\\mathcal{A}_{\\mathrm{CM}} = \\langle \\hat{x}_{\\mathrm{CM}}, \\hat{P} \\rangle$, $\\mathcal{A}_{A|A} = \\langle \\hat{r}_{j|k}, \\hat{p}_{k|j} \\rangle$, $\\mathcal{A}_{i|A} = \\langle \\hat{r}_{i|k}, \\hat{p}_{i|j} \\rangle$, ${i\\neq k,j}$.',
+     defs:['xcm','P','M','r','pj','rjk','pkj']},
     {id:'T_rpam', label:'Rel. pos.\nabs. mom.', kind:'tps', x:800, y:220,
-     note:'Local Algebras (TPS): $\\mathcal{A}_{k|A} = \\langle \\hat{x}_k, \\hat{P} \\rangle$, $\\mathcal{A}_{i|A} = \\langle \\hat{r}_{i|k}, \\hat{p}_i \\rangle$.'},
+     note:'Positions relative to $k$, absolute momenta. Local~Algebras~(TPS):\n$\\mathcal{A}_{k|A} = \\langle \\hat{x}_k, \\hat{P} \\rangle$, $\\mathcal{A}_{i|A} = \\langle \\hat{r}_{i|k}, \\hat{p}_i \\rangle$, ${i\\neq k}$.',
+     defs:['P','r']},
     {id:'T_rpcm', label:'Rel. pos.\nc.o.m. mom.', kind:'tps', x:1250, y:220,
-     note:'Local Algebras (TPS): $\\mathcal{A}_{k|A} = \\langle \\hat{x}_{\\mathrm{CM}}, \\hat{P} \\rangle$, $\\mathcal{A}_{i|A} = \\langle \\hat{r}_{i|k}, \\hat{\\pi}_{i|k} \\rangle$.'},
+     note:'Positions relative to $k$, momenta relative to the c.o.m. Local~Algebras~(TPS):\n$\\mathcal{A}_{k|A} = \\langle \\hat{x}_{\\mathrm{CM}}, \\hat{P} \\rangle$, $\\mathcal{A}_{i|A} = \\langle \\hat{r}_{i|k}, \\hat{\\pi}_{i|k} \\rangle$, ${i\\neq k}$.',
+     defs:['xcm','P','M','r','pi']},
     {id:'T_rmap', label:'Rel. mom.\nabs. pos.', kind:'tps', x:1700, y:220,
-     note:'Local Algebras (TPS): $\\mathcal{A}_{k|A} = \\langle \\hat{x}_{\\mathrm{CM}}, \\hat{p}_k \\rangle$, $\\mathcal{A}_{i|A} = \\langle \\hat{x}_i, \\hat{p}_{i|k} \\rangle$.'},
+     note:'Momenta relative to $k$, absolute positions. Local~Algebras~(TPS):\n$\\mathcal{A}_{k|A} = \\langle \\hat{x}_{\\mathrm{CM}}, \\hat{p}_k \\rangle$, $\\mathcal{A}_{i|A} = \\langle \\hat{x}_i, \\hat{p}_{i|k} \\rangle$, ${i\\neq k}$.',
+     defs:['xcm','pk','M']},
     {id:'T_rmcp', label:'Rel. mom.\nc.o.m. pos.', kind:'tps', x:2170, y:220,
-     note:'Local Algebras (TPS): $\\mathcal{A}_{k|A} = \\langle \\hat{x}_{\\mathrm{CM}}, \\hat{P} \\rangle$, $\\mathcal{A}_{i|A} = \\langle \\hat{\\chi}_{i|k}, \\hat{p}_{i|k} \\rangle$.'},
+     note:'Momenta relative to $k$, positions relative to the c.o.m. Local~Algebras~(TPS):\n$\\mathcal{A}_{k|A} = \\langle \\hat{x}_{\\mathrm{CM}}, \\hat{P} \\rangle$, $\\mathcal{A}_{i|A} = \\langle \\hat{\\chi}_{i|k}, \\hat{p}_{i|k} \\rangle$, ${i\\neq k}$.',
+     defs:['xcm','P','M','chi','pk']},
 
     /* element (I): external structure kept (✓) or constraint imposed (×) */
     {id:'C_n1',  label:'no constraint', kind:'constraint', x:90,   y:380, note:'✓ External structure exists but is inaccessible (symmetry-based).'},
-    {id:'C_g1',  label:'P̂ = P₀ or\nx̂_CM = X₀', kind:'constraint', x:360, y:380, note:'× No external structure (gauge-based).'},
+    {id:'C_g1',  label:'P̂ = P₀ or\nx̂_CM = X₀', kind:'constraint', x:360, y:380,
+     title:'$(\\hat{P}-P_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$~or~$(\\hat{x}_{\\mathrm{CM}}-X_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$', note:'×~No~external~structure~(gauge-based).'},
     {id:'C_n2',  label:'no constraint', kind:'constraint', x:650,  y:380, note:'✓ External structure exists but is inaccessible (symmetry-based).'},
-    {id:'C_p2',  label:'P̂ = P₀', kind:'constraint', x:900,  y:380, note:'× No external structure (gauge-based).'},
-    {id:'C_z2',  label:'P̂ = 0', kind:'constraint', x:1040, y:380, note:'× No external structure (gauge-based).'},
-    {id:'C_z3',  label:'P̂ = 0', kind:'constraint', x:1180, y:380, note:'× No external structure (gauge-based).'},
+    {id:'C_p2',  label:'P̂ = P₀', kind:'constraint', x:900,  y:380,
+     title:'$(\\hat{P}-P_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$', note:'×~No~external~structure~(gauge-based).'},
+    {id:'C_z2',  label:'P̂ = 0', kind:'constraint', x:1040, y:380,
+     title:'$\\hat{P}\\vert\\psi\\rangle^{\\mathrm{phys}}=0$', note:'×~No~external~structure~(gauge-based).'},
+    {id:'C_z3',  label:'P̂ = 0', kind:'constraint', x:1180, y:380,
+     title:'$\\hat{P}\\vert\\psi\\rangle^{\\mathrm{phys}}=0$', note:'×~No~external~structure~(gauge-based).'},
     {id:'C_n3',  label:'no constraint', kind:'constraint', x:1330, y:380, note:'✓ External structure exists but is inaccessible (symmetry-based).'},
     {id:'C_n4',  label:'no constraint', kind:'constraint', x:1610, y:380, note:'✓ External structure exists but is inaccessible (symmetry-based).'},
-    {id:'C_x4',  label:'x̂_CM = X₀', kind:'constraint', x:1880, y:380, note:'× No external structure (gauge-based).'},
+    {id:'C_x4',  label:'x̂_CM = X₀', kind:'constraint', x:1880, y:380,
+     title:'$(\\hat{x}_{\\mathrm{CM}}-X_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$', note:'×~No~external~structure~(gauge-based).'},
     {id:'C_n5',  label:'no constraint', kind:'constraint', x:2080, y:380, note:'✓ External structure exists but is inaccessible (symmetry-based).'},
-    {id:'C_g5',  label:'P̂ = P₀ or\nx̂_CM = X₀', kind:'constraint', x:2260, y:380, note:'× No external structure (gauge-based).'},
+    {id:'C_g5',  label:'P̂ = P₀ or\nx̂_CM = X₀', kind:'constraint', x:2260, y:380,
+     title:'$(\\hat{P}-P_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$~or~$(\\hat{x}_{\\mathrm{CM}}-X_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$', note:'×~No~external~structure~(gauge-based).'},
 
     /* element (III): accessible observables and what is discarded */
-    {id:'O_a1',  label:'(α) → Tr.\nc.o.m. and EP', kind:'operation', x:0,    y:520, note:'Keep only the relational algebras.'},
-    {id:'O_b1',  label:'(β) → Tr.\nc.o.m.', kind:'operation', x:180,  y:520, note:'Add the commutant of the largest compatible global symmetry.'},
-    {id:'O_g1',  label:'(γ) → Tr.\nc.o.m.', kind:'operation', x:360,  y:520, note:'Gauge-based discard.'},
-    {id:'O_b2',  label:'(β) → Deph.\nref. mom.', kind:'operation', x:560,  y:520, note:'Dephasing in $\\hat{P}$; $P$ survives as a classical label.'},
-    {id:'O_a2',  label:'(α) → Tr.\nref.', kind:'operation', x:740,  y:520, note:'Keep only the relational algebras.'},
-    {id:'O_g2',  label:'(γ) → Tr.\nref.', kind:'operation', x:920,  y:520, note:'Gauge-based discard.'},
-    {id:'O_gog', label:'(γ) → Tr.\nref.', kind:'operation', x:1100, y:520, note:'Gauge-based discard.'},
-    {id:'O_ab3', label:'(α) = (β) → Tr.\nc.o.m.', kind:'operation', x:1320, y:520, note:'Here the two options coincide.'},
-    {id:'O_b4',  label:'(β) → Deph.\nc.o.m. mom.', kind:'operation', x:1520, y:520, note:'Dephasing in $\\hat{x}_{\\mathrm{CM}}$; $X_{\\mathrm{CM}}$ survives as a classical label.'},
-    {id:'O_a4',  label:'(α) → Tr.\nref.', kind:'operation', x:1700, y:520, note:'Keep only the relational algebras.'},
-    {id:'O_g4',  label:'(γ) → Tr.\nref.', kind:'operation', x:1880, y:520, note:'Gauge-based discard.'},
-    {id:'O_ab5', label:'(α) = (β) → Tr.\nc.o.m.', kind:'operation', x:2080, y:520, note:'Here the two options coincide.'},
-    {id:'O_g5',  label:'(γ) → Tr.\nc.o.m.', kind:'operation', x:2260, y:520, note:'Gauge-based discard.'},
-
+    {id:'O_a1',  label:'(α) → Tr.\nc.o.m. and EP', kind:'operation', x:0,    y:520, note:'Only the relational algebras $\\mathcal{A}_{i|A}$ are accessible. The c.o.m. algebra $\\mathcal{A}_{\\mathrm{CM}}$ and the extra particle algebra $\\mathcal{A}_{A|A}$ are traced out.'},
+    {id:'O_b1',  label:'(β) → Tr.\nc.o.m.', kind:'operation', x:180,  y:520, note:'The largest symmetry of the relational algebras $\\mathcal{A}_{i|A}$ is global Galilei. Both $\\mathcal{A}_{i|A}$ and the extra particle algebra $\\mathcal{A}_{A|A}$ are invariant under it, so both are accessible. Only the c.o.m. algebra $\\mathcal{A}_{\\mathrm{CM}}$ is traced out.'},
+    {id:'O_g1',  label:'(γ) → Tr.\nc.o.m.', kind:'operation', x:360,  y:520, note:'Only the observables commuting with the constraint ($\\hat{P}$ or $\\hat{x}_{\\mathrm{CM}}$) are accessible: the relational algebras $\\mathcal{A}_{i|A}$ and the extra particle algebra $\\mathcal{A}_{A|A}$. The c.o.m. algebra $\\mathcal{A}_{\\mathrm{CM}}$ is the only gauge dependent one, so it is traced out.'},
+    {id:'O_b2',  label:'(β) → Deph.\nref. mom.', kind:'operation', x:560,  y:520, note:'The largest symmetry of the relational algebras $\\mathcal{A}_{i|A}$ is global translations, generated by $\\hat{P}$. All operators commuting with $\\hat{P}$ are accessible, including $\\hat{P}$ itself, which commutes with itself. Dephasing in the eigenbasis of $\\hat{P}$ removes the coherences between its eigenvalues, so that $P$ survives as a classical label (the extra particle).'},
+    {id:'O_a2',  label:'(α) → Tr.\nref.', kind:'operation', x:740,  y:520, note:'Only the relational algebras $\\mathcal{A}_{i|A}$ are accessible. The reference algebra $\\mathcal{A}_{k|A} = \\langle \\hat{x}_k, \\hat{P} \\rangle$ is traced out.'},
+    {id:'O_g2',  label:'(γ) → Tr.\nref.', kind:'operation', x:920,  y:520, note:'Only the gauge invariant observables are accessible. Since $\\hat{P}$ has already been fixed to the number $P_0$, the reference algebra $\\mathcal{A}_{k|A} = \\langle \\hat{x}_k, P_0\\rangle$ is traced out, which leaves the relational algebras $\\mathcal{A}_{i|A}$.'},
+    {id:'O_gog', label:'(γ) → Tr.\nref.', kind:'operation', x:1100, y:520, note:'Only the observables commuting with the constraint $\\hat{P}$ are accessible: the relational algebras $\\mathcal{A}_{i|A}$. The reference algebra $\\mathcal{A}_{k|A}$ is traced out, since $\\hat{x}_k$ (or $\\hat{x}_{\\mathrm{CM}}$) is gauge dependent. For $P=0$ both TPS give the same result, as $\\hat{\\pi}_{i|k}=\\hat{p}_i$.'},
+    {id:'O_ab3', label:'(α) = (β) → Tr.\nc.o.m.', kind:'operation', x:1320, y:520, note:'The relational algebras $\\mathcal{A}_{i|A}$ contain exactly the operators invariant under Galilei, i.e. those commuting with its generators $\\hat{P}$ and $\\hat{x}_{\\mathrm{CM}}$. The largest symmetry is therefore global Galilei, and (α) and (β) coincide. Only $\\mathcal{A}_{i|A}$ is accessible, and the c.o.m. algebra $\\mathcal{A}_{k|A}$ is traced out.'},
+    {id:'O_b4',  label:'(β) → Deph.\nc.o.m. mom.', kind:'operation', x:1520, y:520, note:'The absolute positions $\\hat{x}_i$ break translations, so the largest symmetry of the relational algebras $\\mathcal{A}_{i|A}$ is boosts, generated by $\\hat{x}_{\\mathrm{CM}}$. The accessible observables are $\\mathcal{A}_{i|A}$ and $\\hat{x}_{\\mathrm{CM}}$, which commutes with itself, while $\\hat{p}_k$ is discarded. The algebra $\\mathcal{A}_{k|A}$ is dephased in the eigenbasis of $\\hat{x}_{\\mathrm{CM}}$, so that $X_{\\mathrm{CM}}$ survives as a classical label (the extra particle).'},
+    {id:'O_a4',  label:'(α) → Tr.\nref.', kind:'operation', x:1700, y:520, note:'Only the relational algebras $\\mathcal{A}_{i|A}$ are accessible. The reference algebra $\\mathcal{A}_{k|A}$ is traced out.'},
+    {id:'O_g4',  label:'(γ) → Tr.\nref.', kind:'operation', x:1880, y:520, note:'Only the observables commuting with the constraint $\\hat{x}_{\\mathrm{CM}}$ are accessible: the relational algebras $\\mathcal{A}_{i|A}$. The reference algebra $\\mathcal{A}_{k|A}$ is traced out, since $\\hat{p}_k$ is gauge dependent.'},
+    {id:'O_ab5', label:'(α) = (β) → Tr.\nc.o.m.', kind:'operation', x:2080, y:520, note:'The relational algebras $\\mathcal{A}_{i|A}$ contain exactly the operators invariant under Galilei, i.e. those commuting with its generators $\\hat{P}$ and $\\hat{x}_{\\mathrm{CM}}$. The largest symmetry is therefore global Galilei, and (α) and (β) coincide. Only $\\mathcal{A}_{i|A}$ is accessible, and the c.o.m. algebra $\\mathcal{A}_{k|A}$ is traced out.'},
+    {id:'O_g5',  label:'(γ) → Tr.\nc.o.m.', kind:'operation', x:2260, y:520, note:'Only the observables commuting with the constraint ($\\hat{P}$ or $\\hat{x}_{\\mathrm{CM}}$) are accessible: the relational algebras $\\mathcal{A}_{i|A}$. The c.o.m. algebra $\\mathcal{A}_{k|A}$ is the only gauge dependent one, so it is traced out.'},
     /* approaches: rows of the summary table */
     {id:'L_opg',   label:'OP for\nGalilei', kind:'outcome', x:0, y:680,
      note:'Observables $\\hat{r}_{i|k}, \\hat{p}_{i|j}$. d.o.f. $N \\to N-2$. No QRF transformation in general.'},
@@ -469,6 +493,22 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     {id:'L_pnr',   label:'PN in rel.\nmom. frame', kind:'outcome', x:2260, y:680,
      note:'Observables $\\hat{\\chi}_{i|k}, \\hat{p}_{i|k}$. d.o.f. $N \\to N-1$.'}
   ];
+
+  /* DEFS = definitions of the operators used in the notes, from paper.tex / tab:tps_choices.
+     A box lists the keys it needs in its defs field; they are shown, in that order, in small
+     type under its note (list M too wherever a definition uses it). */
+  var DEFS = {
+    M:   '$M:=\\sum_i m_i$',
+    P:   '$\\hat{P}:=\\sum_i\\hat{p}_i$',
+    xcm: '$\\hat{x}_{\\mathrm{CM}}:=\\frac{1}{M}\\sum_i m_i\\hat{x}_i$',
+    r:   '$\\hat{r}_{i|k}:=\\hat{x}_i-\\hat{x}_k$',
+    pi:  '$\\hat{\\pi}_{i|k}:=\\hat{p}_i-\\tfrac{m_i}{M}\\hat{P}$',
+    pk:  '$\\hat{p}_{i|k}:=\\hat{p}_i-\\tfrac{m_i}{m_k}\\hat{p}_k$',
+    chi: '$\\hat{\\chi}_{i|k}:=\\hat{x}_i-\\hat{x}_{\\mathrm{CM}}$',
+    pj:  '$\\hat{p}_{i|j}:=\\hat{p}_i-\\tfrac{m_i}{m_j}\\hat{p}_j$',
+    rjk: '$\\hat{r}_{j|k}:=\\tfrac{1}{M}\\big[(\\sum_{i\\neq k}m_i)\\,\\hat{x}_k-\\sum_{i\\neq k}m_i\\hat{x}_i\\big]$',
+    pkj: '$\\hat{p}_{k|j}:=\\sum_{i\\neq j}\\hat{p}_i-\\tfrac{1}{m_j}(\\sum_{i\\neq j}m_i)\\,\\hat{p}_j$'
+  };
 
   /* E = the solid tree lines, drawn from parent to child: ['parentId','childId'].
      Clicking a box highlights everything connected to it through these. */
@@ -814,18 +854,25 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     return hintHeight();
   }
 
-  // fit eles into the visible part of the map: below the band (when open),
+  // the zoom at which eles just fit into the map left of a strip `right` px wide and below
+  // `top` px (the band, or the card), above the usage hint (or the card strip).
+  // Less padding above and below: the top only has to clear the band's tab, and the
+  // bottom strip (hint or card) already keeps its own margin
+  function fitZoom(eles, padding, right, top){
+    var hIn = cy.height() - top - bottomStrip() - Math.min(padding, 34) - Math.min(padding, 12);
+    var bb = viewBox(eles);
+    return Math.min((cy.width() - right - 2*padding)/bb.w, hIn/bb.h, cy.maxZoom());
+  }
+
+  // fit eles into the visible part of the map: below the band (when open), or below `below` px,
   // above the usage hint (or the card strip) and left of a strip `right` px wide.
   // zMin: never zoom out further than this; if eles are then wider than the map,
   // keep `keep` (the selected box) in view and leave the rest to dragging
-  function fitInto(eles, padding, right, animate, zMin, keep){
-    var top = mapTop(), w = cy.width() - right, h = cy.height() - top - bottomStrip();
-    // less padding above and below: the top only has to clear the band's tab, and the
-    // bottom strip (hint or card) already keeps its own margin
+  function fitInto(eles, padding, right, animate, zMin, keep, below){
+    var top = Math.max(mapTop(), below || 0), w = cy.width() - right, h = cy.height() - top - bottomStrip();
     var padT = Math.min(padding, 34), padB = Math.min(padding, 12), hIn = h - padT - padB;
     var bb = viewBox(eles);
-    var z = Math.min((w - 2*padding)/bb.w, hIn/bb.h, cy.maxZoom());
-    z = Math.max(z, cy.minZoom(), zMin || 0);
+    var z = Math.max(fitZoom(eles, padding, right, top), cy.minZoom(), zMin || 0);
     var cx = bb.x1 + bb.w/2, cy0 = bb.y1 + bb.h/2;
     if(keep && keep.nonempty()){
       var kx1 = Infinity, kx2 = -Infinity, ky2 = -Infinity;
@@ -851,19 +898,29 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   function zoomTo(eles, padding){ fitInto(eles, padding, 0); }
 
   // like zoomTo, but fits the route into the part of the map left of the card,
-  // so the card covers only faded boxes
+  // so the card covers only faded boxes. The card is counted as at most CARD_ROOM px wide:
+  // a card widened by its formulas overlaps the map's right edge instead of shrinking the route
+  var CARD_ROOM = 320;
   function cardStrip(){
     var card = document.getElementById('card');
     if(card.hidden || cardAtBottom.matches) return 0;
-    var right = card.offsetWidth + (card.offsetHeight >= cy.height() - 2 ? 8 : 32);   // side panel: no gap
+    var right = Math.min(card.offsetWidth, CARD_ROOM) + (card.offsetHeight >= cy.height() - 2 ? 8 : 32);   // side panel: no gap
     return cy.width() - right < 240 ? 0 : right;   // narrow screen: card just overlays
   }
 
   // phones held upright: a route is wider than the screen, so do not shrink its text below
   // ~10px (box fonts are 16–22, see SIZE); the selected box(es) stay in view
   var READABLE_ZOOM = 0.55;
+  // corner card: fit the route beside the card or below it, whichever shows it larger
+  // (tall routes go beside it; the whole tree, selected from the root, is wide and goes below)
   function zoomBesideCard(eles, padding){
-    if(!cardAtBottom.matches) return fitInto(eles, padding, cardStrip());
+    if(!cardAtBottom.matches){
+      var card = document.getElementById('card'), right = cardStrip();
+      var below = bandHeight() + 16 + card.offsetHeight + 8;   // card's final bottom (its top slides with the band)
+      if(right && fitZoom(eles, padding, 0, Math.max(mapTop(), below)) > fitZoom(eles, padding, right, mapTop()))
+        return fitInto(eles, padding, 0, true, 0, null, below);
+      return fitInto(eles, padding, right);
+    }
     fitInto(eles, 24, 0, true, READABLE_ZOOM, cy.nodes('.seed'));
   }
 
@@ -968,7 +1025,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     seedLink = null;
     if(bandOpen()) autoHidden = true;
     setBand(false);                                   // give the route the full map height
-    fillCard(texLabel(node.data('label')), node.data('note') || '');
+    fillCard(node.data('title') || texLabel(node.data('label')), node.data('note') || '', node.data('defs'));
     computeMoves();
     placeNodes();
     refit();
@@ -977,17 +1034,47 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     });
   }
 
-  // show the card with a title and a note; done before fitting, so the card's size is measurable
-  function fillCard(title, note){
+  // show the card with a title, a note and the definitions it uses (keys of DEFS);
+  // done before fitting, so the card's size is measurable
+  function fillCard(title, note, defs){
     var d = document.getElementById('detail');
     d.innerHTML = '';
     var s = document.createElement('strong');
-    s.textContent = title;
+    // formulas in the title are bold like the text around them (\boldsymbol does not reach \mathrm),
+    // and each is one unbreakable group; ~ between them is a non-breaking space, as in notes
+    s.textContent = title.replace(/\$([^$]+)\$/g, function(m, tex){
+      return '$\\boldsymbol{' + tex.replace(/\\mathrm\{/g, '\\mathbf{') + '}$';
+    }).split('$').map(function(p, j){ return j % 2 ? p : p.replace(/~/g, ' '); }).join('$');
+    // a break can still fall next to a formula, so a title with ~ is kept whole like a line of formulas
+    if(title.indexOf('~') >= 0) s.className = 'eqs';
     d.appendChild(s);
     var n = document.createElement('span');
     n.className = 'note';
-    n.textContent = note;
+    note.split('\n').forEach(function(line, i){
+      if(i) n.appendChild(document.createTextNode('\n'));
+      var l = document.createElement('span');
+      if(line.charAt(0) === '$') l.className = 'eqs';   // a line of formulas: kept whole
+      // outside $...$ (the even pieces): ~ becomes a non-breaking space, and a hyphen gets
+      // an invisible word joiner after it, so "symmetry-based" never splits
+      l.textContent = line.split('$').map(function(p, j){
+        return j % 2 ? p : p.replace(/~/g, ' ').replace(/-/g, '-⁠');
+      }).join('$');
+      n.appendChild(l);
+    });
     d.appendChild(n);
+    if(defs && defs.length){
+      var w = document.createElement('span');
+      w.className = 'defs';
+      w.textContent = 'with ';
+      // each definition is one unbreakable piece, so lines wrap only between definitions
+      defs.forEach(function(k, i){
+        var p = document.createElement('span');
+        p.textContent = DEFS[k] + (i < defs.length - 1 ? ',' : '.');
+        w.appendChild(p);
+        w.appendChild(document.createTextNode(' '));
+      });
+      d.appendChild(w);
+    }
     renderTex(d);
     document.getElementById('card').hidden = false;
   }
