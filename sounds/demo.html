@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sound Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f1e9; --paper:#fbfaf5; --ink:#2b3440; --ink-soft:#5d6672; --rule:#cfcabb;
+  --tps:#9cbfdf; --constraint:#da8d83; --shadow:#2b3440;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.5 'Roboto Mono', ui-monospace, monospace}
+header{position:sticky;top:0;z-index:1;background:var(--bg);border-bottom:2px solid var(--ink);padding:16px 24px 12px}
+h1{font-size:18px;margin:0 0 4px}
+.lede{margin:0;color:var(--ink-soft)}
+.bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:10px}
+.bar label{display:flex;gap:6px;align-items:center;cursor:pointer}
+#now{margin-left:auto;padding:4px 10px;border:1.5px solid var(--rule);border-radius:6px;background:var(--paper);min-width:20ch}
+#now b{font-weight:500}
+main{padding:8px 24px 40px;max-width:1200px}
+h2{font-size:14px;margin:26px 0 4px;text-transform:uppercase;letter-spacing:.06em}
+h2 small{text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink-soft)}
+.fam{display:grid;grid-template-columns:12ch 1fr;gap:8px;align-items:start;padding:8px 0;border-top:1.5px dashed var(--rule)}
+.fam > span{padding-top:5px;color:var(--ink-soft)}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;font-size:12px;padding:4px 9px;cursor:pointer;background:var(--paper);color:var(--ink);
+  border:1.5px solid var(--ink);border-radius:6px;box-shadow:2px 2px 0 var(--shadow);transition:transform 60ms,box-shadow 60ms}
+button:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--shadow)}
+button:active,button.playing{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--shadow);background:var(--tps)}
+button.used{border-width:2px;font-weight:700}
+button.used::after{content:" ● " attr(data-role);color:var(--constraint);font-weight:500}
+button:focus-visible{outline:2px solid var(--constraint);outline-offset:2px}
+@media (max-width:600px){
+  header,main{padding-left:16px;padding-right:16px}
+  .fam{grid-template-columns:1fr}
+  #now{margin-left:0;width:100%}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Sound library</h1>
+  <p class="lede">Kenney Interface Sounds and UI Audio (CC0). Click a button to play it; bold ones (●) are used by the map now.</p>
+  <div class="bar">
+    <label><input type="checkbox" id="hover"> play on hover</label>
+    <label>volume <input type="range" id="vol" min="0" max="1" step="0.05" value="0.6"></label>
+    <span id="now">last: –</span>
+  </div>
+</header>
+<main id="list"></main>
+<script>
+  // the files in library/<pack>/<name>.ogg
+  var PACKS = {
+    'interface-sounds': ['back_001','back_002','back_003','back_004','bong_001','click_001','click_002','click_003','click_004','click_005','close_001','close_002','close_003','close_004','confirmation_001','confirmation_002','confirmation_003','confirmation_004','drop_001','drop_002','drop_003','drop_004','error_001','error_002','error_003','error_004','error_005','error_006','error_007','error_008','glass_001','glass_002','glass_003','glass_004','glass_005','glass_006','glitch_001','glitch_002','glitch_003','glitch_004','maximize_001','maximize_002','maximize_003','maximize_004','maximize_005','maximize_006','maximize_007','maximize_008','maximize_009','minimize_001','minimize_002','minimize_003','minimize_004','minimize_005','minimize_006','minimize_007','minimize_008','minimize_009','open_001','open_002','open_003','open_004','pluck_001','pluck_002','question_001','question_002','question_003','question_004','scratch_001','scratch_002','scratch_003','scratch_004','scratch_005','scroll_001','scroll_002','scroll_003','scroll_004','scroll_005','select_001','select_002','select_003','select_004','select_005','select_006','select_007','select_008','switch_001','switch_002','switch_003','switch_004','switch_005','switch_006','switch_007','tick_001','tick_002','tick_004','toggle_001','toggle_002','toggle_003','toggle_004'],
+    'ui-audio': ['Preview','click1','click2','click3','click4','click5','mouseclick1','mouserelease1','rollover1','rollover2','rollover3','rollover4','rollover5','rollover6','switch1','switch2','switch3','switch4','switch5','switch6','switch7','switch8','switch9','switch10','switch11','switch12','switch13','switch14','switch15','switch16','switch17','switch18','switch19','switch20','switch21','switch22','switch23','switch24','switch25','switch26','switch27','switch28','switch29','switch30','switch31','switch32','switch33','switch34','switch35','switch36','switch37','switch38']
+  };
+  // what the map plays now (SOUNDS in index.html)
+  var USED = {'interface-sounds/click_002':'click', 'interface-sounds/switch_002':'select', 'interface-sounds/drop_004':'fold'};
+
+  var list = document.getElementById('list'), now = document.getElementById('now');
+  var vol = document.getElementById('vol'), hover = document.getElementById('hover');
+
+  function play(path, btn){
+    var a = new Audio('library/' + path + '.ogg');   // a new element each time, so quick clicks overlap
+    a.volume = +vol.value;
+    a.play().catch(function(){});
+    now.innerHTML = 'last: <b></b>';
+    now.querySelector('b').textContent = path;
+    btn.classList.add('playing');
+    setTimeout(function(){ btn.classList.remove('playing'); }, 150);
+  }
+
+  Object.keys(PACKS).forEach(function(pack){
+    var h = document.createElement('h2');
+    h.innerHTML = pack + ' <small>(' + PACKS[pack].length + ')</small>';
+    list.appendChild(h);
+    // one row per family: the name without its number
+    var fams = {};
+    PACKS[pack].forEach(function(n){ var f = n.replace(/_?\d+$/, ''); (fams[f] = fams[f] || []).push(n); });
+    Object.keys(fams).forEach(function(f){
+      var row = document.createElement('div'), lab = document.createElement('span'), btns = document.createElement('div');
+      row.className = 'fam'; btns.className = 'btns';
+      lab.textContent = f;
+      fams[f].forEach(function(n){
+        var b = document.createElement('button'), path = pack + '/' + n;
+        b.textContent = n;
+        b.title = path;
+        if(USED[path]){ b.classList.add('used'); b.dataset.role = USED[path]; }
+        b.addEventListener('click', function(){ play(path, b); });
+        b.addEventListener('mouseenter', function(){ if(hover.checked) play(path, b); });
+        btns.appendChild(b);
+      });
+      row.appendChild(lab); row.appendChild(btns);
+      list.appendChild(row);
+    });
+  });
+</script>
+</body>
+</html>

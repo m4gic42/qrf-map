@@ -153,8 +153,10 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 /* floating selection card, top-right corner of the map */
 #card{
   position:absolute;top:calc(var(--band-h) + 16px);right:16px;z-index:2;
-  /* as narrow as its widest unbreakable piece (a line of formulas), within 300–420px */
-  width:min-content;min-width:min(300px, calc(100% - 32px));max-width:min(420px, calc(100% - 32px));
+  /* as narrow as its widest unbreakable piece (a line of formulas), within 300–420px,
+     unless the box sets its own card width (--card-w, from card in N) */
+  width:var(--card-w, min-content);
+  min-width:min(var(--card-w, 300px), calc(100% - 32px));max-width:min(var(--card-w, 420px), calc(100% - 32px));
   max-height:calc(100% - 32px - var(--band-h));overflow-y:auto;
   transition:top var(--slide) var(--ease),max-height var(--slide) var(--ease);
   background:var(--paper);border:2px solid var(--ink);border-radius:10px;
@@ -177,6 +179,11 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 #card.min #card-title,#card.min .note,#card.min .defs,#card.min #reset{display:none}
 #card.min #detail strong{margin:0}
 #detail{font-size:12.5px;color:var(--ink-soft);white-space:pre-line}   /* a \n in a note starts a new line */
+#detail a{color:var(--ink);text-decoration:underline;text-underline-offset:2px}
+#detail .note b{color:var(--ink);font-weight:700}
+#detail .note{text-align:justify}   /* no ragged blank space at the right of the lines */
+#detail .katex{white-space:nowrap}   /* a formula is never split across lines */
+#detail .nobr{white-space:nowrap}    /* <nobr> in a note: text and formula kept on one line */
 #detail strong{color:var(--ink);font-weight:700;display:block;margin-bottom:3px;font-size:13px}
 /* definitions of the symbols in the note: one small run-on line below a dashed rule */
 #detail .defs{display:block;margin-top:8px;padding-top:6px;border-top:1.5px dashed var(--rule);font-size:11.5px;line-height:1.6;
@@ -207,14 +214,77 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 #toggle[aria-expanded="false"]{border-top-color:var(--ink)}
 #toggle[aria-expanded="false"] svg{transform:rotate(180deg)}
 #toggle:focus-visible{outline:2px solid var(--constraint);outline-offset:2px}
+/* pictures: a panel sliding in from the right edge, below the selection card (its top is
+   set from the script, --pics-top); closed, only its tab shows */
+#pics{
+  position:absolute;right:0;top:var(--pics-top, calc(var(--band-h) + 16px));z-index:3;
+  width:min(280px, calc(100% - 56px));max-height:calc(100% - var(--pics-top, 0px) - 60px);
+  display:flex;flex-direction:column;
+  background:var(--paper);border:2px solid var(--ink);border-right:0;border-radius:10px 0 0 10px;
+  box-shadow:4px 4px 0 var(--shadow);
+  transition:transform var(--slide) var(--ease),top var(--slide) var(--ease);
+}
+#pics.closed{transform:translateX(100%);box-shadow:none}
+#pics-tab{
+  position:absolute;right:100%;top:12px;margin-right:2px;padding:10px 5px;cursor:pointer;
+  display:flex;gap:6px;align-items:center;writing-mode:vertical-rl;
+  font:inherit;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+  background:var(--paper-2);color:var(--ink);
+  border:2px solid var(--ink);border-right:0;border-radius:8px 0 0 8px;
+}
+#pics-tab:hover{padding-right:8px}
+#pics-tab:focus-visible{outline:2px solid var(--constraint);outline-offset:2px}
+.pics-head{display:flex;align-items:baseline;gap:8px;padding:10px 12px 6px;border-bottom:1.5px dashed var(--rule)}
+.pics-head h2{margin:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.pics-head span{font-size:11px;color:var(--ink-soft)}
+.pgrid{display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;padding:10px 10px 12px;overflow-y:auto}
+.pic{position:relative;border:1.5px solid var(--rule);border-radius:8px;background:var(--paper);
+  transition:border-color 160ms,box-shadow 160ms}
+.pic .thumb{display:block;width:100%;padding:4px 4px 4px;margin:0;background:none;border:0;cursor:zoom-in;font:inherit;text-align:left;color:inherit}
+/* nothing selected: every miniature pale; hovered, open or relevant to the selection: in colour */
+.pic img{display:block;width:100%;height:52px;object-fit:contain;
+  filter:grayscale(.8);opacity:.42;transition:filter 160ms,opacity 160ms}
+.pic .pt{display:block;margin-top:3px;font-size:9.5px;line-height:1.25;color:var(--ink-soft)}
+.pic:hover img,.pic.open img,.pic.rel img{filter:none;opacity:1}
+.pic.rel{border-color:var(--ink);box-shadow:2px 2px 0 var(--shadow)}
+.pic.rel .pt{color:var(--ink);font-weight:500}
+.pic .go{position:absolute;top:2px;right:2px;width:19px;height:19px;padding:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--paper);color:var(--ink-soft);border:1.5px solid var(--rule);border-radius:6px}
+.pic .go:hover{color:var(--ink);border-color:var(--ink)}
+.pic .thumb:focus-visible,.pic .go:focus-visible{outline:2px solid var(--constraint);outline-offset:1px}
+/* a picture enlarged over the whole page */
+#viewer{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:rgba(0,0,0,.45)}
+#viewer[hidden]{display:none}
+#viewer figure{margin:0;max-width:min(1100px, 100%);max-height:100%;display:flex;flex-direction:column;
+  background:var(--paper);border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--shadow);overflow:hidden}
+#viewer img{display:block;min-height:0;max-width:100%;max-height:calc(100vh - 140px);object-fit:contain;padding:12px;margin:0 auto}
+#viewer figcaption{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 14px;border-top:1.5px dashed var(--rule)}
+#viewer figcaption strong{margin-right:auto;font-size:13px}
+#viewer button{font:inherit;font-size:12.5px;padding:6px 12px;cursor:pointer;background:var(--paper);color:var(--ink);
+  border:2px solid var(--ink);border-radius:8px;box-shadow:3px 3px 0 var(--shadow)}
+#viewer button:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow)}
+#viewer button[hidden]{display:none}
 /* usage hint, bottom-left corner of the map */
 .hint{
   position:absolute;left:16px;bottom:12px;z-index:1;margin:0;
-  max-width:calc(100% - 32px);padding:4px 10px;
+  max-width:calc(100% - 32px - 44px);padding:4px 10px;   /* leaves room for the mute button */
   font-size:12px;color:var(--ink-soft);line-height:1.4;
   background:var(--paper);border:1.5px solid var(--rule);border-radius:6px;
   pointer-events:none;   /* never blocks dragging the map */
 }
+/* sound on / off, bottom-right corner of the map */
+#mute{
+  position:absolute;right:16px;bottom:12px;z-index:1;
+  width:32px;height:32px;padding:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--paper);color:var(--ink-soft);
+  border:1.5px solid var(--rule);border-radius:6px;
+}
+#mute:hover{color:var(--ink);border-color:var(--ink)}
+#mute .off,#mute[aria-pressed="true"] .on{display:none}
+#mute[aria-pressed="true"] .off{display:inline}
 
 /* laptops and wider: the four legends in one row, kept as short as possible. The colour key is
    as wide as its lines; the other widths follow how much text each holds, so that all columns
@@ -345,6 +415,13 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   <main>
     <div id="cy"></div>
     <p class="hint"><span class="mouse">Drag to pan, scroll to zoom. Double-click to zoom in, double-click again to zoom back out. Click empty space or press Esc to show the whole tree.</span><span class="touch">Drag to pan, pinch to zoom. Tap a box to isolate its route, tap empty space to show the whole tree.</span></p>
+    <button id="mute" type="button" aria-pressed="false" aria-label="Mute sounds" title="Mute sounds">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 9h4l5-4v14l-5-4H4z"/>
+        <path class="on" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>
+        <path class="off" d="M17 9l5 6M22 9l-5 6"/>
+      </svg>
+    </button>
     <div id="card" role="dialog" aria-labelledby="card-title" hidden>
       <button id="min" type="button" aria-label="Shrink the card" title="Shrink the card" aria-expanded="true"><svg width="14" height="9" viewBox="0 0 16 10" aria-hidden="true"><polyline points="2,2 8,8 14,2" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <button id="close" type="button" aria-label="Close">×</button>
@@ -352,7 +429,26 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
       <div id="detail"></div>
       <button id="reset">Show the whole tree</button>
     </div>
+    <!-- the miniatures are generated from PICS (script below) -->
+    <div id="pics" class="closed">
+      <button id="pics-tab" type="button" aria-controls="pics-list" aria-expanded="false" aria-label="Show pictures" title="Show pictures">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
+        Pictures
+      </button>
+      <div class="pics-head"><h2>Pictures</h2><span>click to enlarge</span></div>
+      <div class="pgrid" id="pics-list" inert></div>
+    </div>
   </main>
+  <div id="viewer" role="dialog" aria-modal="true" aria-labelledby="viewer-title" hidden>
+    <figure>
+      <img alt="">
+      <figcaption>
+        <strong id="viewer-title"></strong>
+        <button id="viewer-go" type="button">Show on the map</button>
+        <button id="viewer-close" type="button" aria-label="Close">×</button>
+      </figcaption>
+    </figure>
+  </div>
 </div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -408,7 +504,10 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
                only) is never broken on laptops: the card widens to fit it, up to 420px.
        title : (optional) title of the card, with LaTeX in $...$; without it the label is used
                (labels are canvas text on the map, so they cannot hold LaTeX).
+               <b>...</b> is bold, <a href="...">...</a> a link, <nobr>...</nobr> stays on one line.
        defs  : (optional) keys of DEFS (below N) whose definitions are listed under the note.
+       card  : (optional) width of the card in px on laptops, for this box only; without it the card
+               is as wide as its widest line of formulas, within 300–420px.
        width, font (optional) : override SIZE for this box only (width is then fixed).
   */
   var N = [
@@ -466,32 +565,32 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     {id:'O_ab5', label:'(α) = (β) → Tr.\nc.o.m.', kind:'operation', x:2080, y:520, note:'The relational algebras $\\mathcal{A}_{i|A}$ contain exactly the operators invariant under Galilei, i.e. those commuting with its generators $\\hat{P}$ and $\\hat{x}_{\\mathrm{CM}}$. The largest symmetry is therefore global Galilei, and (α) and (β) coincide. Only $\\mathcal{A}_{i|A}$ is accessible, and the c.o.m. algebra $\\mathcal{A}_{k|A}$ is traced out.'},
     {id:'O_g5',  label:'(γ) → Tr.\nc.o.m.', kind:'operation', x:2260, y:520, note:'Only the observables commuting with the constraint ($\\hat{P}$ or $\\hat{x}_{\\mathrm{CM}}$) are accessible: the relational algebras $\\mathcal{A}_{i|A}$. The c.o.m. algebra $\\mathcal{A}_{k|A}$ is the only gauge dependent one, so it is traced out.'},
     /* approaches: rows of the summary table */
-    {id:'L_opg',   label:'OP for\nGalilei', kind:'outcome', x:0, y:680,
-     note:'Observables $\\hat{r}_{i|k}, \\hat{p}_{i|j}$. d.o.f. $N \\to N-2$. No QRF transformation in general.'},
-    {id:'L_epg',   label:'EP for\nGalilei', kind:'outcome', x:180, y:680,
-     note:'Observables $\\hat{r}_{i|k}, \\hat{p}_{i|j}$; $\\hat{r}_{j|k}, \\hat{p}_{k|j}$. d.o.f. $N \\to N-1$.'},
-    {id:'L_pn2',   label:'Gauge-based\nfor rel. pos.\nrel. mom.', kind:'outcome', x:360, y:680,
-     note:'Observables $\\hat{r}_{i|k}, \\hat{p}_{i|j}$; $\\hat{r}_{j|k}, \\hat{p}_{k|j}$. d.o.f. $N \\to N-1$.'},
-    {id:'L_ept',   label:'EP for\ntranslations', kind:'outcome', x:560, y:680,
-     note:'Observables $\\hat{r}_{i|k}, \\hat{p}_i$; $P$ classical. d.o.f. $N \\to N-1$ + classical label.'},
-    {id:'L_opt',   label:'OP for\ntranslations', kind:'outcome', x:740, y:680,
-     note:'Observables $\\hat{r}_{i|k}, \\hat{p}_i$. d.o.f. $N \\to N-1$. No QRF transformation in general.'},
-    {id:'L_extpn', label:'Extended PN', kind:'outcome', x:920, y:680,
-     note:'Observables $\\hat{r}_{i|k}, \\hat{p}_i$. d.o.f. $N \\to N-1$.'},
-    {id:'L_ogpn',  label:'Original PN', kind:'outcome', x:1100, y:680,
-     note:'Momenta absolute or relative to the c.o.m. Observables $\\hat{r}_{i|k}, \\hat{p}_i = \\hat{\\pi}_{i|k}$. d.o.f. $N \\to N-1$.'},
-    {id:'L_qitg',  label:'QIT for\nGalilei', kind:'outcome', x:1320, y:680,
-     note:'Observables $\\hat{r}_{i|k}, \\hat{\\pi}_{i|k}$. d.o.f. $N \\to N-1$.'},
-    {id:'L_epb',   label:'EP for\nboosts', kind:'outcome', x:1520, y:680,
-     note:'Observables $\\hat{x}_i, \\hat{p}_{i|k}$; $X_{\\mathrm{CM}}$ classical. d.o.f. $N \\to N-1$ + classical label.'},
-    {id:'L_opb',   label:'OP for\nboosts', kind:'outcome', x:1700, y:680,
-     note:'Observables $\\hat{x}_i, \\hat{p}_{i|k}$. d.o.f. $N \\to N-1$. No QRF transformation in general.'},
-    {id:'L_gb',    label:'Gauge-based\nfor boosts', kind:'outcome', x:1880, y:680,
-     note:'Observables $\\hat{x}_i, \\hat{p}_{i|k}$. d.o.f. $N \\to N-1$.'},
-    {id:'L_qitgr', label:'QIT for\nGalilei\n(rel. mom.)', kind:'outcome', x:2080, y:680,
-     note:'Observables $\\hat{\\chi}_{i|k}, \\hat{p}_{i|k}$. d.o.f. $N \\to N-1$.'},
-    {id:'L_pnr',   label:'PN in rel.\nmom. frame', kind:'outcome', x:2260, y:680,
-     note:'Observables $\\hat{\\chi}_{i|k}, \\hat{p}_{i|k}$. d.o.f. $N \\to N-1$.'}
+    {id:'L_opg',   label:'OP for\nGalilei', kind:'outcome', x:0, y:680, card:340,
+     note:'Operational approach for the Galilei group, introduced in this work, on the <b>Relative positions – relative momenta</b> TPS: the relativization map is applied to Galilei and only the relative observables are kept. Alice accesses $\\hat{r}_{i|k}, \\hat{p}_{i|j}$ for $i\\neq k,j$, i.e. $N-2$ particles. The transformation to Bob depends on the discarded extra particle, so in general no unitary QRF transformation exists.'},
+    {id:'L_epg',   label:'EP for\nGalilei', kind:'outcome', x:180, y:680, card:380,
+     note:'Extra Particle approach for Galilei, on the <b>Relative positions – relative momenta</b> TPS: besides the relative observables, the agent keeps the invariant d.o.f. of the reference frames, the "extra particle" (<a href="https://arxiv.org/abs/2110.13199" target="_blank">Castro-Ruiz and Oreshkov</a>). Alice accesses $\\hat{r}_{i|k}, \\hat{p}_{i|j}$ and the extra particle $\\hat{r}_{j|k}, \\hat{p}_{k|j}$, i.e. $N-1$ particles. The QRF transformation is unitary: the standard map on the relative positions of $i\\neq j,l$ and on the relative momenta of $i\\neq h,k$, nontrivial on the remaining four d.o.f. Indistinguishable from the gauge-based approach on the same TPS.'},
+    {id:'L_pn2',   label:'Gauge-based\nfor rel. pos.\nrel. mom.', kind:'outcome', x:360, y:680, card:380,
+     note:'Gauge-based approach on the <b>Relative positions – relative momenta</b> TPS, introduced in this work. Either constraint, in any sector, $(\\hat{P}-P_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$ or $(\\hat{x}_{\\mathrm{CM}}-X_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$, makes only the c.o.m. gauge dependent. Alice accesses $\\hat{r}_{i|k}, \\hat{p}_{i|j}$ and $\\hat{r}_{j|k}, \\hat{p}_{k|j}$, i.e. $N-1$ particles, whatever the constraint. These are the algebras of the EP for Galilei, so the QRF transformation is the same unitary: indistinguishable from the EP for Galilei.'},
+    {id:'L_ept',   label:'EP for\ntranslations', kind:'outcome', x:560, y:680, card:410,
+     note:'Extra Particle approach for pure translations, on the <b>Relative positions – absolute momenta</b> TPS: the agent keeps the relative observables and, as a classical label, the total momentum (<a href="https://arxiv.org/abs/2608.23698" target="_blank">Sahdo and Castro-Ruiz</a>). Alice accesses $\\hat{r}_{i|k}, \\hat{p}_i$, i.e. $N-1$ particles, plus the classical label $P$. Since $\\hat{P}$ is accessible, the QRF transformation is unitary for any state: $\\hat{S}^{P}_{A\\to B}=\\hat{\\mathcal{P}}_{AB}\\exp\\big[i\\hat{r}_{h|k}\\big(\\sum_{i\\neq k,h}\\hat{p}_i-\\hat{P}\\big)\\big]$. Only this approach and the EP for boosts give Alice a classical label, which distinguishes them from all the others.'},
+    {id:'L_opt',   label:'OP for\ntranslations', kind:'outcome', x:740, y:680, card:410,
+     note:'Operational approach for pure translations, on the <b>Relative positions – absolute momenta</b> TPS: only the relative observables defined by the relativization map are accessible (<a href="https://arxiv.org/abs/2303.14002" target="_blank">Carette et al.</a>). Alice accesses $\\hat{r}_{i|k}, \\hat{p}_i$, i.e. $N-1$ particles. The map to Bob depends on the inaccessible $\\hat{P}$, so in general no unitary exists. For an eigenstate <nobr>of $\\hat{P}$ it reduces to $\\hat{S}^{P}_{A\\to B}=\\hat{\\mathcal{P}}_{AB}\\exp\\big[i\\hat{r}_{h|k}\\big(\\sum_{i\\neq k,h}\\hat{p}_i-P\\big)\\big]$.</nobr>\n Indistinguishable from the Extended PN when the global state has a definite total momentum.'},
+    {id:'L_extpn', label:'Extended PN', kind:'outcome', x:920, y:680, card:450,
+     note:'Extension of the Perspective Neutral approach to non-zero total momentum sectors (<a href="https://arxiv.org/abs/2510.09100" target="_blank">de la Hamette et al.</a>), here on the <b>Relative positions – absolute momenta</b> TPS with the constraint $(\\hat{P}-P_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$. Alice accesses $\\hat{r}_{i|k}, \\hat{p}_i$ in the sector $P_0$, i.e. $N-1$ particles. The QRF transformation is $\\hat{S}^{P_0}_{A\\to B}=\\hat{\\mathcal{P}}_{AB}\\exp\\big[i\\hat{r}_{h|k}\\big(\\sum_{i\\neq k,h}\\hat{p}_i-P_0\\big)\\big]$. Indistinguishable from the OP for translations when the global state has a definite total momentum.'},
+    {id:'L_ogpn',  label:'Original PN', kind:'outcome', x:1100, y:680, card:430,
+     note:'Original Perspective Neutral approach: the Machian constraint $\\hat{P}\\vert\\psi\\rangle^{\\mathrm{phys}}=0$ makes the external description redundant, and only gauge invariant quantities are physical (<a href="https://arxiv.org/abs/1809.00556" target="_blank">Vanrietvelde et al.</a>). Alice accesses $\\hat{r}_{i|k}, \\hat{p}_i=\\hat{\\pi}_{i|k}$, i.e. $N-1$ particles, on both the <b>Relative positions – absolute momenta</b> and the <b>Relative positions – c.o.m. momenta</b> TPS. The QRF transformation is $\\hat{S}_{A\\to B}=\\hat{\\mathcal{P}}_{AB}\\exp\\big[i\\hat{r}_{h|k}\\sum_{i\\neq k,h}\\hat{\\pi}_{i|k}\\big]$. Indistinguishable from the QIT for Galilei.'},
+    {id:'L_qitg',  label:'QIT for\nGalilei', kind:'outcome', x:1320, y:680, card:410,
+     note:'Quantum information approach for Galilei, on the <b>Relative positions – c.o.m. momenta</b> TPS: incoherent group averaging (G-twirling) over translations and boosts of the c.o.m. (<a href="https://arxiv.org/abs/1602.07696" target="_blank">Smith et al.</a>). Alice accesses $\\hat{r}_{i|k}, \\hat{\\pi}_{i|k}$, i.e. $N-1$ particles. The QRF transformation is the standard map of <a href="https://arxiv.org/abs/1712.07207" target="_blank">Giacomini et al.</a>, $\\hat{S}_{A\\to B}=\\hat{\\mathcal{P}}_{AB}\\exp\\big[i\\hat{r}_{h|k}\\sum_{i\\neq k,h}\\hat{\\pi}_{i|k}\\big]$, a change of coordinates within the relational algebras. Indistinguishable from the original PN.'},
+    {id:'L_epb',   label:'EP for\nboosts', kind:'outcome', x:1520, y:680, card:420,
+     note:'Extra Particle approach for pure boosts, introduced in this work, on the <b>Relative momenta – absolute positions</b> TPS: the EP for translations with position and momentum exchanged, the c.o.m. position playing the role of the extra particle. Alice accesses $\\hat{x}_i, \\hat{p}_{i|k}$, i.e. $N-1$ particles, plus the classical label $X_{\\mathrm{CM}}$. Since $\\hat{x}_{\\mathrm{CM}}$ is accessible, the QRF transformation is unitary for any state. As for the EP for translations, the classical label distinguishes it from the approaches without one.'},
+    {id:'L_opb',   label:'OP for\nboosts', kind:'outcome', x:1700, y:680, card:460,
+     note:'Operational approach for pure boosts, on the <b>Relative momenta – absolute positions</b> TPS: the relativization map applied to boosts (<a href="https://arxiv.org/abs/1703.10434" target="_blank">Loveridge et al.</a>). Alice accesses $\\hat{x}_i, \\hat{p}_{i|k}$, i.e. $N-1$ particles. As for translations, the map to Bob depends on the inaccessible $\\hat{x}_{\\mathrm{CM}}$, so in general no unitary exists; for an eigenstate of $\\hat{x}_{\\mathrm{CM}}$ it reduces to a unitary depending on $X_{\\mathrm{CM}}$. Indistinguishable from the gauge-based approach for boosts when the global state has a definite c.o.m. position.'},
+    {id:'L_gb',    label:'Gauge-based\nfor boosts', kind:'outcome', x:1880, y:680, card:390,
+     note:'Gauge-based approach for boosts, introduced in this work: on the <b>Relative momenta – absolute positions</b> TPS the constraint $(\\hat{x}_{\\mathrm{CM}}-X_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$ makes the total momentum gauge dependent. Alice accesses $\\hat{x}_i, \\hat{p}_{i|k}$ in the sector $X_0$, i.e. $N-1$ particles. The QRF transformation is that of the Extended PN with position and momentum exchanged, and depends on $X_0$. Indistinguishable from the OP for boosts when the global state has a definite c.o.m. position; for $X_0=0$ it coincides with the PN relative momentum frame.'},
+    {id:'L_qitgr', label:'QIT for\nGalilei\n(rel. mom.)', kind:'outcome', x:2080, y:680, card:470,
+     note:'QIT approach for Galilei on the <b>Relative momenta – c.o.m. positions</b> TPS: the same G-twirling, with a different parametrization of the relational d.o.f. (<a href="https://arxiv.org/abs/1602.07696" target="_blank">Smith et al.</a>). Alice accesses $\\hat{\\chi}_{i|k}, \\hat{p}_{i|k}$, i.e. $N-1$ particles. The QRF transformation, for $i\\neq k,h$, $\\hat{\\chi}_{i|k}\\mapsto\\hat{\\chi}_{i|h}$ and $\\hat{p}_{i|k}\\mapsto\\hat{p}_{i|h}-\\tfrac{m_i}{m_k}\\hat{p}_{k|h}$, is a change of coordinates within the relational algebras. Indistinguishable from the PN relative momentum frame, and a reparametrization of the QIT for Galilei.'},
+    {id:'L_pnr',   label:'PN in rel.\nmom. frame', kind:'outcome', x:2260, y:680, card:460,
+     note:'Relative momentum frame of the Perspective Neutral approach (<a href="https://arxiv.org/abs/2109.01912" target="_blank">Želený</a>), on the <b>Relative momenta – c.o.m. positions</b> TPS: particle $k$ defines the relative momenta, and the c.o.m. is removed as gauge. It follows from either constraint, for any value of $X_0$: $(\\hat{P}-P_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$ or $(\\hat{x}_{\\mathrm{CM}}-X_0)\\vert\\psi\\rangle^{\\mathrm{phys}}=0$. Alice accesses $\\hat{\\chi}_{i|k}, \\hat{p}_{i|k}$, i.e. $N-1$ particles. The QRF transformation is that of the QIT for Galilei (rel. mom.), from which it is indistinguishable; it is a reparametrization of the original PN.'}
   ];
 
   /* DEFS = definitions of the operators used in the notes, from paper.tex / tab:tps_choices.
@@ -550,11 +649,32 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
        note : explanation; dagger is added when the link's label carries a † */
   var LINKS = {
     eq:    {join:' $\\simeq$ ',
-            note:'Indistinguishable at the relational level: same colour group in the summary table (same accessible algebra, d.o.f. and QRF transformation).',
+            note:'Indistinguishable at the relational level: same accessible algebra, d.o.f. and QRF transformation.',
             dagger:'$^{\\dagger}$ Only in a definite $\\hat{P}$ (resp. $\\hat{x}_{\\mathrm{CM}}$) sector.'},
     basis: {join:' ↔ ',
             note:'Same approach in a different basis (reparametrization of the relational subsystem).'}
   };
+
+  /* PICS = the pictures in the side panel, in this order. One entry per picture:
+       file  : file name in Pictures/ (the enlarged view); its miniature is Pictures/thumbs/<file>,
+               200px wide (make one for a new picture, to keep the panel light)
+       title : caption under the miniature
+       boxes : ids in N the picture illustrates. Their routes light the miniature up when selected,
+               and its map button selects them (several boxes: all their routes together).
+               Empty: no map button, and the miniature only lights up when hovered or opened.
+       routes: (optional) false: the map button shows only the boxes themselves (and the links
+               between them), not the routes through them */
+  var PICS = [
+    {file:'Symmetry-based.png',           title:'Symmetry-based',         boxes:['C_n1','C_n2','C_n3','C_n4','C_n5']},
+    {file:'frameworl_scheme_blue-1.png',  title:'Framework scheme blue',  boxes:['C_n1','C_n2','C_n3','C_n4','C_n5']},
+    {file:'gauge-based.png',              title:'Gauge-based',            boxes:['C_g1','C_p2','C_z2','C_z3','C_x4','C_g5']},
+    {file:'frameworl_scheme_gauge-1.png', title:'Framework scheme gauge', boxes:['C_g1','C_p2','C_z2','C_z3','C_x4','C_g5']},
+    {file:'perspectival.png',             title:'Perspectival',           routes:false,   // the approaches row only
+     boxes:N.filter(function(n){ return n.kind === 'outcome' || n.kind === 'open'; }).map(function(n){ return n.id; })},
+    {file:'EP2.png',                      title:'Extra particle',         boxes:['C_n1']},   // symmetry-based only
+    {file:'rel_pos_abs_mom.png',          title:'Rel. pos. abs. mom.',    boxes:['C_n2']},   // symmetry-based only
+    {file:'rel_pos_com.png',              title:'Rel. pos. c.o.m.',       boxes:['C_n3']}
+  ];
 
   /* ==========================================================
      RENDERING — generic code below; you shouldn't need to edit it.
@@ -685,11 +805,18 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   // "same approach, other basis" brackets: both corners straight below the box centres,
   // on a common bottom line, so when one box sits lower its side is shorter.
   // Cytoscape places segment points along / across the source→target line, so convert.
+  var BRACKET_GAP = 60, BRACKET_W = 500;
   function shapeBracket(e){
     var s = e.source().position(), t = e.target().position();
     var dx = t.x - s.x, dy = t.y - s.y, L2 = dx*dx + dy*dy, L = Math.sqrt(L2);
     var nx = -dy/L, ny = dx/L, sg = e.data('nsign') || 1;
     var bottom = Math.max(s.y, t.y) + e.data('depth');
+    // with a route selected one end has slid a box height lower: keep the bracket
+    // shallow, a fixed gap under the lower box (whatever its height), so its label stays above
+    // the hint; measured from where the boxes end up, so the line holds still while they slide
+    if(moved && (moved[e.source().id()] || moved[e.target().id()]))
+      bottom = Math.max(targetOf(e.source()).y + e.source().outerHeight()/2,
+                        targetOf(e.target()).y + e.target().outerHeight()/2) + BRACKET_GAP;
     var w = [], d = [];
     [{x:s.x, y:bottom}, {x:t.x, y:bottom}].forEach(function(p){
       var vx = p.x - s.x, vy = p.y - s.y;
@@ -765,8 +892,11 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
       });
       var edge = side > 0 ? Math.max.apply(null, keptXs) : Math.min.apply(null, keptXs);
       var slots = rowXs.filter(function(x){ return side*(x - edge) > 0; });
-      // one column beside the route, one box height below the row
-      if(slots.length) moved[other.id()] = {x:side > 0 ? Math.min.apply(null, slots) : Math.max.apply(null, slots),
+      // one column beside the route (but at least BRACKET_W from the selected box, so every
+      // bracket is about as wide), one box height below the row
+      var sx = home[seed.id()].x;
+      if(slots.length) moved[other.id()] = {x:side > 0 ? Math.max(Math.min.apply(null, slots), sx + BRACKET_W)
+                                                       : Math.min(Math.max.apply(null, slots), sx - BRACKET_W),
                                             y:y + other.outerHeight()};
     });
   }
@@ -808,6 +938,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 
   // slide every box to its target (moved boxes out, the others back home)
   function placeNodes(){
+    cy.edges('.link[eq="basis"]').forEach(shapeBracket);   // brackets take their final depth at once
     cy.nodes().not('.shadow').forEach(function(n){
       n.toggleClass('lifted', !!moved[n.id()]);
       if(!away(n)) return;
@@ -895,16 +1026,27 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     else cy.animate(vp,{duration:420,easing:'ease-in-out-cubic'});   // same timing as --slide
   }
 
-  function zoomTo(eles, padding){ fitInto(eles, padding, 0); }
+  function zoomTo(eles, padding){ fitInto(eles, padding, cardStrip()); }
 
-  // like zoomTo, but fits the route into the part of the map left of the card,
-  // so the card covers only faded boxes. The card is counted as at most CARD_ROOM px wide:
-  // a card widened by its formulas overlaps the map's right edge instead of shrinking the route
+  // width kept free at the right of the map for the open pictures panel (0 when closed, or on
+  // phones, where it just overlays the map)
+  function picsStrip(){
+    var p = document.getElementById('pics');
+    if(p.classList.contains('closed') || cardAtBottom.matches) return 0;
+    var right = p.offsetWidth + 24;
+    return cy.width() - right < 240 ? 0 : right;
+  }
+
+  // like zoomTo, but fits the route into the part of the map left of the card (and of the
+  // pictures panel, when open), so they cover only faded boxes. The card is counted as at most
+  // CARD_ROOM px wide: a card widened by its formulas overlaps the map's right edge instead of
+  // shrinking the route
   var CARD_ROOM = 320;
   function cardStrip(){
-    var card = document.getElementById('card');
-    if(card.hidden || cardAtBottom.matches) return 0;
-    var right = Math.min(card.offsetWidth, CARD_ROOM) + (card.offsetHeight >= cy.height() - 2 ? 8 : 32);   // side panel: no gap
+    var card = document.getElementById('card'), right = 0;
+    if(!card.hidden && !cardAtBottom.matches)
+      right = Math.min(card.offsetWidth, CARD_ROOM) + (card.offsetHeight >= cy.height() - 2 ? 8 : 32);   // side panel: no gap
+    right = Math.max(right, picsStrip());
     return cy.width() - right < 240 ? 0 : right;   // narrow screen: card just overlays
   }
 
@@ -917,8 +1059,9 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     if(!cardAtBottom.matches){
       var card = document.getElementById('card'), right = cardStrip();
       var below = bandHeight() + 16 + card.offsetHeight + 8;   // card's final bottom (its top slides with the band)
-      if(right && fitZoom(eles, padding, 0, Math.max(mapTop(), below)) > fitZoom(eles, padding, right, mapTop()))
-        return fitInto(eles, padding, 0, true, 0, null, below);
+      // below the card the open pictures panel still takes its strip
+      if(right && fitZoom(eles, padding, picsStrip(), Math.max(mapTop(), below)) > fitZoom(eles, padding, right, mapTop()))
+        return fitInto(eles, padding, picsStrip(), true, 0, null, below);
       return fitInto(eles, padding, right);
     }
     fitInto(eles, 24, 0, true, READABLE_ZOOM, cy.nodes('.seed'));
@@ -946,6 +1089,16 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   // the card sits below the band; keep its offset in step with the band
   function syncBandHeight(){
     document.documentElement.style.setProperty('--band-h', bandHeight() + 'px');
+    placePics();
+  }
+
+  // the pictures panel starts 12px below the card (at its final place: the card's top slides
+  // with the band), or below the band when there is no card in the top-right corner
+  var cardAside = window.matchMedia('(max-height:520px) and (min-width:821px)');   // card down the right edge
+  function placePics(){
+    var card = document.getElementById('card'), top = bandHeight() + 16;
+    if(!card.hidden && !cardAtBottom.matches && !cardAside.matches) top += card.offsetHeight + 12;
+    document.getElementById('pics').style.setProperty('--pics-top', top + 'px');
   }
   syncBandHeight();
   fitInto(cy.elements(), 44, 0, false);   // first view: whole tree below the band
@@ -964,7 +1117,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   // once everything (fonts, stylesheet) has loaded, fit once more with the final band height
   function settle(){
     syncBandHeight();
-    if(!current) fitInto(cy.elements(), 44, 0, false);
+    if(!current) fitInto(cy.elements(), 44, cardStrip(), false);
   }
   cy.ready(settle);
   if(document.readyState === 'complete') settle();
@@ -981,7 +1134,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
       syncBandHeight();
       if(!bandOpen()) return;
       if(current) zoomBesideCard(current,60);
-      else fitInto(cy.elements(), 44, 0, false);
+      else fitInto(cy.elements(), 44, cardStrip(), false);
     }).observe(document.getElementById('legend'));
   }
 
@@ -997,6 +1150,35 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     syncBandHeight();
   }
 
+  // interface sounds (Kenney, CC0; see sounds/License.txt). Each play uses a fresh copy,
+  // so quick clicks overlap instead of cutting each other off
+  var SOUNDS = {click:'click_002', select:'switch_002', fold:'drop_004'};
+  Object.keys(SOUNDS).forEach(function(k){
+    SOUNDS[k] = new Audio('sounds/' + SOUNDS[k] + '.ogg');
+    SOUNDS[k].preload = 'auto';
+  });
+  // the mute button; the choice is kept in this browser (if storage is allowed)
+  var muted = false;
+  try { muted = localStorage.getItem('qrf-map-muted') === '1'; } catch(err){}
+  function setMuted(m){
+    muted = m;
+    var b = document.getElementById('mute'), label = m ? 'Turn sounds on' : 'Mute sounds';
+    b.setAttribute('aria-pressed', String(m));
+    b.setAttribute('aria-label', label);
+    b.title = label;
+    try { localStorage.setItem('qrf-map-muted', m ? '1' : '0'); } catch(err){}
+  }
+  setMuted(muted);
+  document.getElementById('mute').addEventListener('click',function(){
+    setMuted(!muted);
+    sound('click');   // heard only when sounds were just turned back on
+  });
+  function sound(name){
+    if(muted) return;
+    try { var p = SOUNDS[name].cloneNode().play(); if(p) p.catch(function(){}); }
+    catch(err){}   // no audio (or the format is not supported): stay silent
+  }
+
   function clear(){
     current = null;
     seed = null;
@@ -1007,8 +1189,10 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     cy.elements().removeClass('off on seed');
     computeMoves();
     placeNodes();
-    zoomTo(cy.elements(),44);
     document.getElementById('card').hidden = true;
+    placePics();
+    zoomTo(cy.elements(),44);
+    updatePics();
     Array.prototype.forEach.call(document.querySelectorAll('.routes button'), function(b){
       b.setAttribute('aria-pressed','false');
     });
@@ -1025,7 +1209,8 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     seedLink = null;
     if(bandOpen()) autoHidden = true;
     setBand(false);                                   // give the route the full map height
-    fillCard(node.data('title') || texLabel(node.data('label')), node.data('note') || '', node.data('defs'));
+    fillCard(node.data('title') || texLabel(node.data('label')), node.data('note') || '', node.data('defs'), node.data('card'));
+    updatePics();
     computeMoves();
     placeNodes();
     refit();
@@ -1034,9 +1219,11 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     });
   }
 
-  // show the card with a title, a note and the definitions it uses (keys of DEFS);
-  // done before fitting, so the card's size is measurable
-  function fillCard(title, note, defs){
+  // show the card with a title, a note and the definitions it uses (keys of DEFS), at the box's
+  // own card width if it has one; done before fitting, so the card's size is measurable
+  function fillCard(title, note, defs, width){
+    var c = document.getElementById('card');
+    if(width) c.style.setProperty('--card-w', width + 'px'); else c.style.removeProperty('--card-w');
     var d = document.getElementById('detail');
     d.innerHTML = '';
     var s = document.createElement('strong');
@@ -1056,9 +1243,23 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
       if(line.charAt(0) === '$') l.className = 'eqs';   // a line of formulas: kept whole
       // outside $...$ (the even pieces): ~ becomes a non-breaking space, and a hyphen gets
       // an invisible word joiner after it, so "symmetry-based" never splits
-      l.textContent = line.split('$').map(function(p, j){
+      function plain(t){ return t.split('$').map(function(p, j){
         return j % 2 ? p : p.replace(/~/g, ' ').replace(/-/g, '-⁠');
-      }).join('$');
+      }).join('$'); }
+      // an a-tag with href in a note becomes a real link (opening in a new tab), a b-tag bold text,
+      // a nobr-tag a piece kept on one line (text and formulas together); the rest stays text
+      var re = /<a\s+href="([^"]*)"[^>]*>([\s\S]*?)<\/a>|<(b|nobr)>([\s\S]*?)<\/\3>/g, last = 0, m;
+      while((m = re.exec(line))){
+        l.appendChild(document.createTextNode(plain(line.slice(last, m.index))));
+        var link = m[1] !== undefined;
+        var a = document.createElement(link ? 'a' : m[3] === 'b' ? 'b' : 'span');
+        if(link){ a.href = m[1]; a.target = '_blank'; a.rel = 'noopener'; }
+        if(m[3] === 'nobr') a.className = 'nobr';
+        a.textContent = plain(link ? m[2] : m[4]);
+        l.appendChild(a);
+        last = re.lastIndex;
+      }
+      l.appendChild(document.createTextNode(plain(line.slice(last))));
       n.appendChild(l);
     });
     d.appendChild(n);
@@ -1077,6 +1278,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     }
     renderTex(d);
     document.getElementById('card').hidden = false;
+    placePics();
   }
 
   // a clicked link: show the routes to both of its approaches, and explain the link in the card
@@ -1095,6 +1297,22 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     setBand(false);
     var dagger = info.dagger && edge.data('label').indexOf('†') >= 0 ? ' ' + info.dagger : '';
     fillCard(texLabel(a.data('label')) + info.join + texLabel(b.data('label')), info.note + dagger);
+    // the title (both approach names) stays on one line and sets the card's least width, at least
+    // 300px (36px = the card's side padding and borders); from there, up to 120px wider, the width
+    // with the fewest note lines and the fullest last line is kept
+    var t = document.querySelector('#detail strong'), r = document.createRange();
+    var c = document.getElementById('card'), n = c.querySelector('.note');
+    t.classList.add('eqs');
+    r.selectNodeContents(t);
+    var w0 = Math.max(300, Math.ceil(r.getBoundingClientRect().width) + 36), best = null;
+    for(var w = w0; w <= w0 + 120; w += 4){
+      c.style.setProperty('--card-w', w + 'px');
+      var lines = n.getClientRects(), score = lines.length * 1000 - 100 * lines[lines.length - 1].width / lines[0].width;
+      if(!best || score < best.score) best = {score:score, w:w};
+    }
+    c.style.setProperty('--card-w', best.w + 'px');
+    placePics();   // the card's height changed with its width
+    updatePics();
     computeMoves();
     placeNodes();
     refit();
@@ -1110,6 +1328,14 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     ev.target.connectedEdges('.link[eq="basis"]').forEach(shapeBracket);
   });
 
+  // every tap on the map makes a sound: one that selects a box or link switches, any other
+  // (empty space, the selected box again, a tree line) clicks. Bound before the handlers
+  // below, so it sees the selection as it was before the tap
+  cy.on('tap',function(ev){
+    var t = ev.target, picks = t !== cy && !t.hasClass('shadow') &&
+      (t.isNode() ? !(seed && t.same(seed)) : t.hasClass('link') && !(seedLink && t.same(seedLink)));
+    sound(picks ? 'select' : 'click');
+  });
   // clicking the box that is already selected does nothing, so a double-click on it only zooms
   cy.on('tap','node',function(ev){
     if(ev.target.hasClass('shadow')) return;
@@ -1128,7 +1354,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   cy.on('tap',function(ev){
     if(ev.target !== cy) return;
     clearTimeout(bgTimer);
-    bgTimer = setTimeout(clear, 300);
+    bgTimer = setTimeout(function(){ if(current) sound('click'); clear(); }, 300);
   });
   // double-click zooms in; the next double-click goes back to the fitted view
   var dblZoomed = false;
@@ -1149,15 +1375,144 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     var label = min ? 'Expand the card' : 'Shrink the card';
     this.setAttribute('aria-label', label);
     this.title = label;
+    placePics();
     refit();
   });
-  document.addEventListener('keydown',function(ev){ if(ev.key === 'Escape') clear(); });
+  document.addEventListener('keydown',function(ev){
+    if(ev.key !== 'Escape') return;
+    if(!document.getElementById('viewer').hidden){ closeViewer(); return; }   // an enlarged picture closes first
+    if(current) sound('click');
+    clear();
+  });
+  // every button clicks; the legend toggle, the pictures tab, the fold buttons and the card's
+  // buttons drop instead
+  document.addEventListener('click',function(ev){
+    var b = ev.target.closest && ev.target.closest('button');
+    if(b && b.id !== 'mute') sound(b.closest('#card') || b.id === 'toggle' || b.id === 'pics-tab' || b.classList.contains('fold') ? 'fold' : 'click');
+  }, true);
 
   document.getElementById('toggle').addEventListener('click',function(){
     autoHidden = false;   // the user decides from here on
     setBand(!bandOpen());
     refit();
   });
+
+  // ---- pictures panel ----
+  var pics = document.getElementById('pics'), picsList = document.getElementById('pics-list');
+  var picsTab = document.getElementById('pics-tab'), viewer = document.getElementById('viewer');
+  var openPic = null;   // the PICS entry shown enlarged
+
+  // the boxes of a picture that exist in N
+  function picBoxes(p){ return cy.collection(p.boxes.map(function(id){ return cy.getElementById(id); })).filter(function(n){ return n.nonempty(); }); }
+
+  PICS.forEach(function(p, i){
+    var tile = document.createElement('div'), b = document.createElement('button');
+    var img = document.createElement('img'), t = document.createElement('span');
+    tile.className = 'pic';
+    b.type = 'button'; b.className = 'thumb'; b.title = 'Enlarge';
+    img.alt = p.title; img.dataset.src = 'Pictures/thumbs/' + p.file;   // loaded when the panel first opens
+    t.className = 'pt'; t.textContent = p.title;
+    b.appendChild(img); b.appendChild(t);
+    b.addEventListener('click', function(){ openViewer(i); });
+    tile.appendChild(b);
+    if(p.boxes.length){
+      var go = document.createElement('button');
+      go.type = 'button'; go.className = 'go';
+      go.title = 'Show on the map'; go.setAttribute('aria-label', 'Show ' + p.title + ' on the map');
+      go.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
+      go.addEventListener('click', function(){ showPic(p); });
+      tile.appendChild(go);
+    }
+    p.tile = tile;
+    picsList.appendChild(tile);
+  });
+
+  // a miniature is in colour when one of its boxes is the selected box itself (or one of the
+  // boxes a picture's map button selected); the rest of the route does not count
+  function updatePics(){
+    var picked = cy.nodes('.seed');
+    PICS.forEach(function(p){
+      var rel = !!current && picBoxes(p).some(function(n){ return picked.anySame(n); });
+      p.tile.classList.toggle('rel', rel);
+    });
+  }
+
+  function setPics(open){
+    pics.classList.toggle('closed', !open);
+    picsTab.setAttribute('aria-expanded', String(open));
+    var label = open ? 'Hide pictures' : 'Show pictures';
+    picsTab.setAttribute('aria-label', label);
+    picsTab.title = label;
+    if(open) picsList.removeAttribute('inert'); else picsList.setAttribute('inert', '');
+    if(open) Array.prototype.forEach.call(picsList.querySelectorAll('img[data-src]'), function(img){
+      img.src = img.dataset.src; img.removeAttribute('data-src');
+    });
+    try { localStorage.setItem('qrf-map-pics', open ? '1' : '0'); } catch(err){}
+  }
+  picsTab.addEventListener('click', function(){
+    setPics(pics.classList.contains('closed'));
+    refit();
+  });
+  // the panel follows the card's height (a new selection, the card shrunk or closed)
+  if(window.ResizeObserver) new ResizeObserver(placePics).observe(document.getElementById('card'));
+  window.addEventListener('resize', placePics);
+  var picsWasOpen = false;
+  try { picsWasOpen = localStorage.getItem('qrf-map-pics') === '1'; } catch(err){}
+  if(picsWasOpen){ setPics(true); refit(); }
+
+  function openViewer(i){
+    var p = PICS[i];
+    if(openPic) openPic.tile.classList.remove('open');
+    openPic = p;
+    p.tile.classList.add('open');
+    var img = viewer.querySelector('img');
+    img.src = 'Pictures/' + p.file;
+    img.alt = p.title;
+    document.getElementById('viewer-title').textContent = p.title;
+    document.getElementById('viewer-go').hidden = !p.boxes.length;
+    viewer.hidden = false;
+    document.getElementById('viewer-close').focus();
+  }
+  function closeViewer(){
+    if(openPic){ openPic.tile.classList.remove('open'); openPic.tile.querySelector('.thumb').focus(); }
+    openPic = null;
+    viewer.hidden = true;
+  }
+  document.getElementById('viewer-close').addEventListener('click', closeViewer);
+  viewer.addEventListener('click', function(ev){ if(ev.target === viewer) closeViewer(); });   // the backdrop
+  document.getElementById('viewer-go').addEventListener('click', function(){
+    var p = openPic;
+    closeViewer();
+    if(p) showPic(p);
+  });
+
+  // a picture's map button: one box is selected as if clicked; several are shown together,
+  // with their routes, or alone (routes:false)
+  function showPic(p){
+    var nodes = picBoxes(p);
+    if(!nodes.length) return;
+    if(nodes.length === 1 && p.routes !== false){ if(!(seed && seed.same(nodes))) select(nodes); return; }
+    var keep = cy.collection();
+    if(p.routes === false) keep = nodes.union(nodes.edgesWith(nodes).filter('.link'));
+    else nodes.forEach(function(n){ keep = keep.union(route(n)); });
+    cy.elements().addClass('off').removeClass('on seed');
+    keep.removeClass('off').addClass('on');
+    keep.nodes().forEach(function(n){ shadowOf(n.id()).removeClass('off').addClass('on'); });
+    nodes.addClass('seed');
+    current = keep;
+    seed = null;
+    seedLink = null;
+    if(bandOpen()) autoHidden = true;
+    setBand(false);
+    fillCard(p.title, 'The boxes this picture illustrates are highlighted on the map.');
+    updatePics();
+    computeMoves();
+    placeNodes();
+    refit();
+    Array.prototype.forEach.call(document.querySelectorAll('.routes button'), function(b){
+      b.setAttribute('aria-pressed','false');
+    });
+  }
 
   // box labels are canvas text (unicode); in the HTML parts the † becomes LaTeX
   function texLabel(label){ return label.replace(/\n/g,' ').replace(/\s*†/g,'$^{\\dagger}$'); }
