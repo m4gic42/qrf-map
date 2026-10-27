@@ -666,14 +666,14 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
                between them), not the routes through them */
   var PICS = [
     {file:'Symmetry-based.png',           title:'Symmetry-based',         boxes:['C_n1','C_n2','C_n3','C_n4','C_n5']},
-    {file:'frameworl_scheme_blue-1.png',  title:'Framework scheme blue',  boxes:['C_n1','C_n2','C_n3','C_n4','C_n5']},
     {file:'gauge-based.png',              title:'Gauge-based',            boxes:['C_g1','C_p2','C_z2','C_z3','C_x4','C_g5']},
-    {file:'frameworl_scheme_gauge-1.png', title:'Framework scheme gauge', boxes:['C_g1','C_p2','C_z2','C_z3','C_x4','C_g5']},
     {file:'perspectival.png',             title:'Perspectival',           routes:false,   // the approaches row only
      boxes:N.filter(function(n){ return n.kind === 'outcome' || n.kind === 'open'; }).map(function(n){ return n.id; })},
-    {file:'EP2.png',                      title:'Extra particle',         boxes:['C_n1']},   // symmetry-based only
-    {file:'rel_pos_abs_mom.png',          title:'Rel. pos. abs. mom.',    boxes:['C_n2']},   // symmetry-based only
-    {file:'rel_pos_com.png',              title:'Rel. pos. c.o.m.',       boxes:['C_n3']}
+    {file:'frameworl_scheme_blue-1.png',  title:'Framework scheme for symmetry-based',  boxes:['C_n1','C_n2','C_n3','C_n4','C_n5']},
+    {file:'frameworl_scheme_gauge-1.png', title:'Framework scheme for gauge-based', boxes:['C_g1','C_p2','C_z2','C_z3','C_x4','C_g5']},
+    {file:'rel_pos_abs_mom.png',          title:'Rel. pos. abs. mom. TPS',    boxes:['C_n2']},   // symmetry-based only
+    {file:'rel_pos_com.png',              title:'Rel. pos. c.o.m. mom. TPS',       boxes:['C_n3']},
+    {file:'EP2.png',                      title:'Rel. pos. rel. mom. TPS',         boxes:['C_n1']}   // symmetry-based only
   ];
 
   /* ==========================================================
@@ -1150,9 +1150,9 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     syncBandHeight();
   }
 
-  // interface sounds (Kenney, CC0; see sounds/License.txt). Each play uses a fresh copy,
+  // interface sounds (Kenney, CC0; see sounds/License.txt and sounds/License-ui-audio.txt). Each play uses a fresh copy,
   // so quick clicks overlap instead of cutting each other off
-  var SOUNDS = {click:'click_002', select:'switch_002', fold:'drop_004'};
+  var SOUNDS = {click:'click_001', select:'click1', fold:'rollover2'};
   Object.keys(SOUNDS).forEach(function(k){
     SOUNDS[k] = new Audio('sounds/' + SOUNDS[k] + '.ogg');
     SOUNDS[k].preload = 'auto';
