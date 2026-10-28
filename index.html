@@ -93,7 +93,7 @@ main{position:absolute;inset:0;
   background-image:radial-gradient(var(--grid) 1.3px,transparent 1.6px);
   background-size:24px 24px;
 }
-#cy{position:absolute;inset:0;filter:url(#sketch)}
+#cy{position:absolute;inset:0}
 
 h1{
   grid-area:title;text-align:center;
@@ -153,14 +153,17 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 /* floating selection card, top-right corner of the map */
 #card{
   position:absolute;top:calc(var(--band-h) + 16px);right:16px;z-index:2;
-  /* as narrow as its widest unbreakable piece (a line of formulas), within 300–420px,
-     unless the box sets its own card width (--card-w, from card in N) */
+  /* grows with the screen like the legend: 12.5px up to laptops, up to 17px on big monitors;
+     everything inside is in em, so the whole card scales with it */
+  font-size:clamp(12.5px, min(1.5vh, 0.8vw), 17px);
+  /* as narrow as its widest unbreakable piece (a line of formulas), within 24–33.6em
+     (300–420px at 12.5px), unless the box sets its own card width (--card-w, from card in N) */
   width:var(--card-w, min-content);
-  min-width:min(var(--card-w, 300px), calc(100% - 32px));max-width:min(var(--card-w, 420px), calc(100% - 32px));
+  min-width:min(var(--card-w, 24em), calc(100% - 32px));max-width:min(var(--card-w, 33.6em), calc(100% - 32px));
   max-height:calc(100% - 32px - var(--band-h));overflow-y:auto;
   transition:top var(--slide) var(--ease),max-height var(--slide) var(--ease);
   background:var(--paper);border:2px solid var(--ink);border-radius:10px;
-  box-shadow:4px 4px 0 var(--shadow);padding:14px 16px 16px;
+  box-shadow:4px 4px 0 var(--shadow);padding:1.12em 1.28em 1.28em;
 }
 #card[hidden]{display:none}
 #close{
@@ -178,22 +181,22 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 #card.min{padding:10px 70px 10px 16px}
 #card.min #card-title,#card.min .note,#card.min .defs,#card.min #reset{display:none}
 #card.min #detail strong{margin:0}
-#detail{font-size:12.5px;color:var(--ink-soft);white-space:pre-line}   /* a \n in a note starts a new line */
+#detail{font-size:1em;color:var(--ink-soft);white-space:pre-line}   /* a \n in a note starts a new line */
 #detail a{color:var(--ink);text-decoration:underline;text-underline-offset:2px}
 #detail .note b{color:var(--ink);font-weight:700}
 #detail .note{text-align:justify}   /* no ragged blank space at the right of the lines */
 #detail .katex{white-space:nowrap}   /* a formula is never split across lines */
 #detail .nobr{white-space:nowrap}    /* <nobr> in a note: text and formula kept on one line */
-#detail strong{color:var(--ink);font-weight:700;display:block;margin-bottom:3px;font-size:13px}
+#detail strong{color:var(--ink);font-weight:700;display:block;margin-bottom:3px;font-size:1.04em}
 /* definitions of the symbols in the note: one small run-on line below a dashed rule */
-#detail .defs{display:block;margin-top:8px;padding-top:6px;border-top:1.5px dashed var(--rule);font-size:11.5px;line-height:1.6;
+#detail .defs{display:block;margin-top:8px;padding-top:6px;border-top:1.5px dashed var(--rule);font-size:0.92em;line-height:1.6;
   padding-left:5ch;text-indent:-5ch}   /* hanging indent: wrapped lines start under the first definition, not under "with " */
 #detail .defs span{white-space:nowrap;text-indent:0}
 /* a note's line of formulas stays whole where the card is a corner box (it sets the card's width);
    on phones the card has the screen's width and the line wraps */
 @media (min-width:821px) and (min-height:521px){ #detail .eqs{white-space:nowrap} }
 #reset{
-  font:inherit;font-size:12.5px;margin-top:14px;padding:6px 12px;cursor:pointer;
+  font:inherit;font-size:1em;margin-top:1.12em;padding:0.48em 0.96em;cursor:pointer;
   background:var(--paper);color:var(--ink);
   border:2px solid var(--ink);border-radius:8px;
   box-shadow:3px 3px 0 var(--shadow);
@@ -237,14 +240,15 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 .pics-head{display:flex;align-items:baseline;gap:8px;padding:10px 12px 6px;border-bottom:1.5px dashed var(--rule)}
 .pics-head h2{margin:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
 .pics-head span{font-size:11px;color:var(--ink-soft)}
-.pgrid{display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;padding:10px 10px 12px;overflow-y:auto}
+/* two miniatures a row: wide enough for a title on one or two lines */
+.pgrid{display:grid;grid-template-columns:repeat(2, 1fr);gap:8px;padding:10px 10px 12px;overflow-y:auto}
 .pic{position:relative;border:1.5px solid var(--rule);border-radius:8px;background:var(--paper);
   transition:border-color 160ms,box-shadow 160ms}
-.pic .thumb{display:block;width:100%;padding:4px 4px 4px;margin:0;background:none;border:0;cursor:zoom-in;font:inherit;text-align:left;color:inherit}
+.pic .thumb{display:block;width:100%;padding:5px 6px 6px;margin:0;background:none;border:0;cursor:zoom-in;font:inherit;text-align:left;color:inherit}
 /* nothing selected: every miniature pale; hovered, open or relevant to the selection: in colour */
-.pic img{display:block;width:100%;height:52px;object-fit:contain;
+.pic img{display:block;width:100%;height:38px;object-fit:contain;
   filter:grayscale(.8);opacity:.42;transition:filter 160ms,opacity 160ms}
-.pic .pt{display:block;margin-top:3px;font-size:9.5px;line-height:1.25;color:var(--ink-soft)}
+.pic .pt{display:block;margin-top:4px;font-size:10px;line-height:1.25;color:var(--ink-soft)}
 .pic:hover img,.pic.open img,.pic.rel img{filter:none;opacity:1}
 .pic.rel{border-color:var(--ink);box-shadow:2px 2px 0 var(--shadow)}
 .pic.rel .pt{color:var(--ink);font-weight:500}
@@ -450,13 +454,6 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     </figure>
   </div>
 </div>
-
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-  <filter id="sketch" x="-2%" y="-2%" width="104%" height="104%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="2" seed="7" result="noise"/>
-    <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"/>
-  </filter>
-</svg>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
@@ -1039,13 +1036,13 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 
   // like zoomTo, but fits the route into the part of the map left of the card (and of the
   // pictures panel, when open), so they cover only faded boxes. The card is counted as at most
-  // CARD_ROOM px wide: a card widened by its formulas overlaps the map's right edge instead of
+  // CARD_ROOM px wide (at the smallest font; more on big screens, where the card grows): a card widened by its formulas overlaps the map's right edge instead of
   // shrinking the route
   var CARD_ROOM = 320;
   function cardStrip(){
     var card = document.getElementById('card'), right = 0;
     if(!card.hidden && !cardAtBottom.matches)
-      right = Math.min(card.offsetWidth, CARD_ROOM) + (card.offsetHeight >= cy.height() - 2 ? 8 : 32);   // side panel: no gap
+      right = Math.min(card.offsetWidth, CARD_ROOM*parseFloat(getComputedStyle(card).fontSize)/12.5) +(card.offsetHeight >= cy.height() - 2 ? 8 : 32);   // side panel: no gap
     right = Math.max(right, picsStrip());
     return cy.width() - right < 240 ? 0 : right;   // narrow screen: card just overlays
   }
@@ -1150,13 +1147,32 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     syncBandHeight();
   }
 
-  // interface sounds (Kenney, CC0; see sounds/License.txt and sounds/License-ui-audio.txt). Each play uses a fresh copy,
-  // so quick clicks overlap instead of cutting each other off
-  var SOUNDS = {click:'click_001', select:'click1', fold:'rollover2'};
-  Object.keys(SOUNDS).forEach(function(k){
-    SOUNDS[k] = new Audio('sounds/' + SOUNDS[k] + '.ogg');
-    SOUNDS[k].preload = 'auto';
-  });
+  // interface sounds, made on the spot with Web Audio (no files). Shaped in sounds/designer.html;
+  // SOUND holds what it saved (sounds/sound-settings.json): paste a new file over it to change them.
+  // One sound = a tone (with an optional octave above it) and / or a burst of filtered noise, under one
+  // envelope: a linear fade-in (no click at the start) and an exponential tail. back = the variant for
+  // actions that go back (leave a selection, close or hide something, zoom out): lower, glide reversed
+  var SOUND = {
+    "backRate": 0.72,
+    "reverseGlide": true,
+    "master": 1,
+    "sounds": {
+      "select": {"wave": "sine", "freq": 297, "glide": 1.05, "glideTime": 0.105, "tone": 0.36, "harmonic": 0.19,
+                 "noise": 0, "noiseFreq": 100, "noiseQ": 0.4, "cutoff": 4000, "attack": 0.0065, "decay": 0.081, "volume": 0.35},
+      "click":  {"wave": "sine", "freq": 157, "glide": 0.54, "glideTime": 0.07, "tone": 0.11, "harmonic": 0.25,
+                 "noise": 0.05, "noiseFreq": 100, "noiseQ": 4, "cutoff": 3400, "attack": 0.0135, "decay": 0.031, "volume": 0.25},
+      "fold":   {"wave": "sine", "freq": 347, "glide": 1.05, "glideTime": 0.061, "tone": 0.35, "harmonic": 0.14,
+                 "noise": 0.03, "noiseFreq": 100, "noiseQ": 2.1, "cutoff": 300, "attack": 0.0185, "decay": 0.259, "volume": 0.18},
+      "tick":   {"wave": "triangle", "freq": 100, "glide": 1.32, "glideTime": 0.01, "tone": 0.06, "harmonic": 0,
+                 "noise": 0.47, "noiseFreq": 900, "noiseQ": 1.2, "cutoff": 8000, "attack": 0.0005, "decay": 0.005, "volume": 0.35}
+    }
+  };
+  var audio = null;
+  try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch(err){}
+  // browsers start audio suspended until the first gesture: wake it on the press, before the click sounds
+  document.addEventListener('pointerdown', function(){
+    if(audio && audio.state === 'suspended') audio.resume();
+  }, true);
   // the mute button; the choice is kept in this browser (if storage is allowed)
   var muted = false;
   try { muted = localStorage.getItem('qrf-map-muted') === '1'; } catch(err){}
@@ -1173,11 +1189,61 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     setMuted(!muted);
     sound('click');   // heard only when sounds were just turned back on
   });
-  function sound(name){
-    if(muted) return;
-    try { var p = SOUNDS[name].cloneNode().play(); if(p) p.catch(function(){}); }
-    catch(err){}   // no audio (or the format is not supported): stay silent
+  // the synth, as in sounds/designer.html (keep the two the same)
+  function voice(ctx, dest, p, back, g){
+    var t = ctx.currentTime, k = back ? g.backRate : 1;
+    var end = t + p.attack + p.decay;
+    var env = ctx.createGain(), lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = p.cutoff; lp.Q.value = 0.5;
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(p.volume * g.master, t + p.attack);
+    env.gain.exponentialRampToValueAtTime(0.0001, end);
+    lp.connect(env); env.connect(dest);
+    var glide = back && g.reverseGlide ? 1/p.glide : p.glide;
+    function tone(mult, amount){
+      if(amount <= 0) return;
+      var o = ctx.createOscillator(), a = ctx.createGain(), f0 = p.freq * k * mult;
+      o.type = p.wave;
+      o.frequency.setValueAtTime(f0, t);
+      if(glide !== 1) o.frequency.exponentialRampToValueAtTime(f0 * glide, t + Math.max(p.glideTime, 0.001));
+      a.gain.value = amount;
+      o.connect(a); a.connect(lp);
+      o.start(t); o.stop(end + 0.02);
+    }
+    tone(1, p.tone);
+    tone(2, p.tone * p.harmonic);
+    if(p.noise > 0){
+      var len = Math.ceil(ctx.sampleRate * (p.attack + p.decay + 0.03));
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+      for(var i = 0; i < len; i++) d[i] = Math.random()*2 - 1;
+      var s = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), n = ctx.createGain();
+      s.buffer = buf;
+      bp.type = 'bandpass'; bp.frequency.value = p.noiseFreq * k; bp.Q.value = p.noiseQ;
+      n.gain.value = p.noise;
+      s.connect(bp); bp.connect(n); n.connect(lp);
+      s.start(t); s.stop(end + 0.02);
+    }
   }
+  function sound(name, back){
+    if(muted || !audio) return;
+    try {
+      if(audio.state === 'suspended') audio.resume();
+      voice(audio, audio.destination, SOUND.sounds[name], back, SOUND);
+    }
+    catch(err){}   // no Web Audio: stay silent
+  }
+  // zooming with the mouse wheel ticks (back when zooming out): at most every 120ms (a touchpad sends
+  // a stream of wheel events), none once the zoom is at its limit, none before the first click (a
+  // scroll does not wake the audio)
+  var lastTick = 0;
+  cy.container().addEventListener('wheel', function(ev){
+    var out = ev.deltaY > 0;
+    if(!ev.deltaY || (out ? cy.zoom() <= cy.minZoom() : cy.zoom() >= cy.maxZoom())) return;
+    var now = Date.now();
+    if(now - lastTick < 120) return;
+    lastTick = now;
+    if(audio && audio.state === 'running') sound('tick', out);
+  }, {passive:true});
 
   function clear(){
     current = null;
@@ -1186,7 +1252,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     dblZoomed = false;
     if(autoHidden) setBand(true);   // reopen before fitting, so the fit uses the final size
     autoHidden = false;
-    cy.elements().removeClass('off on seed');
+    cy.batch(function(){ cy.elements().removeClass('off on seed'); });
     computeMoves();
     placeNodes();
     document.getElementById('card').hidden = true;
@@ -1200,10 +1266,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 
   function select(node){
     var keep = route(node);
-    cy.elements().addClass('off').removeClass('on seed');
-    keep.removeClass('off').addClass('on');
-    keep.nodes().forEach(function(n){ shadowOf(n.id()).removeClass('off').addClass('on'); });
-    node.addClass('seed');
+    showOnly(keep, node);
     current = keep;
     seed = node;
     seedLink = null;
@@ -1223,7 +1286,8 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   // own card width if it has one; done before fitting, so the card's size is measurable
   function fillCard(title, note, defs, width){
     var c = document.getElementById('card');
-    if(width) c.style.setProperty('--card-w', width + 'px'); else c.style.removeProperty('--card-w');
+    // widths in N are px at the card's smallest font (12.5px): in em, they grow with the card
+    if(width) c.style.setProperty('--card-w', width/12.5 + 'em'); else c.style.removeProperty('--card-w');
     var d = document.getElementById('detail');
     d.innerHTML = '';
     var s = document.createElement('strong');
@@ -1286,10 +1350,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   function selectLink(edge){
     var a = edge.source(), b = edge.target(), info = LINKS[edge.data('eq')] || {join:' – ', note:''};
     var keep = route(a).union(route(b));
-    cy.elements().addClass('off').removeClass('on seed');
-    keep.removeClass('off').addClass('on');
-    keep.nodes().forEach(function(n){ shadowOf(n.id()).removeClass('off').addClass('on'); });
-    a.addClass('seed'); b.addClass('seed');
+    showOnly(keep, a.union(b));
     current = keep;
     seed = null;
     seedLink = edge;
@@ -1298,14 +1359,15 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     var dagger = info.dagger && edge.data('label').indexOf('†') >= 0 ? ' ' + info.dagger : '';
     fillCard(texLabel(a.data('label')) + info.join + texLabel(b.data('label')), info.note + dagger);
     // the title (both approach names) stays on one line and sets the card's least width, at least
-    // 300px (36px = the card's side padding and borders); from there, up to 120px wider, the width
-    // with the fewest note lines and the fullest last line is kept
+    // 24em (300px at the smallest font; the card's side padding and borders = 2.56em + 4px); from
+    // there, up to 9.6em wider, the width with the fewest note lines and the fullest last line is kept
     var t = document.querySelector('#detail strong'), r = document.createRange();
     var c = document.getElementById('card'), n = c.querySelector('.note');
+    var em = parseFloat(getComputedStyle(c).fontSize);
     t.classList.add('eqs');
     r.selectNodeContents(t);
-    var w0 = Math.max(300, Math.ceil(r.getBoundingClientRect().width) + 36), best = null;
-    for(var w = w0; w <= w0 + 120; w += 4){
+    var w0 = Math.ceil(Math.max(24*em, r.getBoundingClientRect().width + 2.56*em + 4)), best = null;
+    for(var w = w0; w <= w0 + 9.6*em; w += 4){
       c.style.setProperty('--card-w', w + 'px');
       var lines = n.getClientRects(), score = lines.length * 1000 - 100 * lines[lines.length - 1].width / lines[0].width;
       if(!best || score < best.score) best = {score:score, w:w};
@@ -1321,6 +1383,17 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     });
   }
 
+  // fade everything but keep (and the shadows of its boxes), mark seeds as selected; in one batch,
+  // so the styles are worked out once rather than after every class change
+  function showOnly(keep, seeds){
+    cy.batch(function(){
+      cy.elements().addClass('off').removeClass('on seed');
+      keep.removeClass('off').addClass('on');
+      keep.nodes().forEach(function(n){ shadowOf(n.id()).removeClass('off').addClass('on'); });
+      seeds.addClass('seed');
+    });
+  }
+
   cy.on('position','node',function(ev){
     if(ev.target.hasClass('shadow')) return;
     var p = ev.target.position();
@@ -1329,9 +1402,11 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   });
 
   // every tap on the map makes a sound: one that selects a box or link switches, any other
-  // (empty space, the selected box again, a tree line) clicks. Bound before the handlers
-  // below, so it sees the selection as it was before the tap
+  // (the selected box again, a tree line, empty space with nothing selected) clicks; empty space
+  // that drops a selection is left to the timer below, which plays the select sound backwards. Bound before the
+  // handlers below, so it sees the selection as it was before the tap
   cy.on('tap',function(ev){
+    if(ev.target === cy && current) return;
     var t = ev.target, picks = t !== cy && !t.hasClass('shadow') &&
       (t.isNode() ? !(seed && t.same(seed)) : t.hasClass('link') && !(seedLink && t.same(seedLink)));
     sound(picks ? 'select' : 'click');
@@ -1354,7 +1429,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   cy.on('tap',function(ev){
     if(ev.target !== cy) return;
     clearTimeout(bgTimer);
-    bgTimer = setTimeout(function(){ if(current) sound('click'); clear(); }, 300);
+    bgTimer = setTimeout(function(){ if(current) sound('select', true); clear(); }, 300);
   });
   // double-click zooms in; the next double-click goes back to the fitted view
   var dblZoomed = false;
@@ -1381,14 +1456,20 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   document.addEventListener('keydown',function(ev){
     if(ev.key !== 'Escape') return;
     if(!document.getElementById('viewer').hidden){ closeViewer(); return; }   // an enlarged picture closes first
-    if(current) sound('click');
+    if(current) sound('select', true);
     clear();
   });
-  // every button clicks; the legend toggle, the pictures tab, the fold buttons and the card's
-  // buttons drop instead
+  // every button clicks; the approach buttons in the legend and the pictures (enlarging one, or
+  // showing it on the map) select like a box, closing the selection plays the select sound
+  // backwards, and the legend toggle, the pictures tab, the fold buttons and the card's other
+  // buttons drop, backwards when they close or hide something (this runs before their handlers,
+  // so aria-expanded is still the old state)
   document.addEventListener('click',function(ev){
     var b = ev.target.closest && ev.target.closest('button');
-    if(b && b.id !== 'mute') sound(b.closest('#card') || b.id === 'toggle' || b.id === 'pics-tab' || b.classList.contains('fold') ? 'fold' : 'click');
+    if(b && (b.closest('.routes') || b.closest('#pics-list') || b.id === 'viewer-go')){ sound('select'); return; }
+    if(b && (b.id === 'close' || b.id === 'reset')){ sound('select', true); return; }
+    if(b && b.id !== 'mute') sound(b.closest('#card') || b.id === 'toggle' || b.id === 'pics-tab' || b.classList.contains('fold') ? 'fold' : 'click',
+      b.getAttribute('aria-expanded') === 'true');
   }, true);
 
   document.getElementById('toggle').addEventListener('click',function(){
@@ -1495,10 +1576,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     var keep = cy.collection();
     if(p.routes === false) keep = nodes.union(nodes.edgesWith(nodes).filter('.link'));
     else nodes.forEach(function(n){ keep = keep.union(route(n)); });
-    cy.elements().addClass('off').removeClass('on seed');
-    keep.removeClass('off').addClass('on');
-    keep.nodes().forEach(function(n){ shadowOf(n.id()).removeClass('off').addClass('on'); });
-    nodes.addClass('seed');
+    showOnly(keep, nodes);
     current = keep;
     seed = null;
     seedLink = null;

@@ -1,0 +1,67 @@
+{
+  "backRate": 0.72,
+  "reverseGlide": true,
+  "master": 1,
+  "sounds": {
+    "select": {
+      "wave": "sine",
+      "freq": 297,
+      "glide": 1.05,
+      "glideTime": 0.105,
+      "tone": 0.36,
+      "harmonic": 0.19,
+      "noise": 0,
+      "noiseFreq": 100,
+      "noiseQ": 0.4,
+      "cutoff": 4000,
+      "attack": 0.0065,
+      "decay": 0.081,
+      "volume": 0.35
+    },
+    "click": {
+      "wave": "sine",
+      "freq": 157,
+      "glide": 0.54,
+      "glideTime": 0.07,
+      "tone": 0.11,
+      "harmonic": 0.25,
+      "noise": 0.05,
+      "noiseFreq": 100,
+      "noiseQ": 4,
+      "cutoff": 3400,
+      "attack": 0.0135,
+      "decay": 0.031,
+      "volume": 0.25
+    },
+    "fold": {
+      "wave": "sine",
+      "freq": 347,
+      "glide": 1.05,
+      "glideTime": 0.061,
+      "tone": 0.35,
+      "harmonic": 0.14,
+      "noise": 0.03,
+      "noiseFreq": 100,
+      "noiseQ": 2.1,
+      "cutoff": 300,
+      "attack": 0.0185,
+      "decay": 0.259,
+      "volume": 0.18
+    },
+    "tick": {
+      "wave": "triangle",
+      "freq": 100,
+      "glide": 1.32,
+      "glideTime": 0.01,
+      "tone": 0.06,
+      "harmonic": 0,
+      "noise": 0.47,
+      "noiseFreq": 900,
+      "noiseQ": 1.2,
+      "cutoff": 8000,
+      "attack": 0.0005,
+      "decay": 0.005,
+      "volume": 0.35
+    }
+  }
+}

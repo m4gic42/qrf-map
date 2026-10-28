@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sound Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f1e9; --paper:#fbfaf5; --ink:#2b3440; --ink-soft:#5d6672; --rule:#cfcabb;
+  --tps:#9cbfdf; --constraint:#da8d83; --shadow:#2b3440;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.5 'Roboto Mono', ui-monospace, monospace}
+header{position:sticky;top:0;z-index:1;background:var(--bg);border-bottom:2px solid var(--ink);padding:14px 24px 12px}
+h1{font-size:18px;margin:0 0 4px}
+.lede{margin:0;color:var(--ink-soft)}
+.bar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:10px}
+.bar label{display:flex;gap:6px;align-items:center}
+main{padding:12px 24px 40px;max-width:1300px}
+h2{font-size:14px;margin:0;text-transform:uppercase;letter-spacing:.06em}
+h2 small{text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink-soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:18px;margin-top:14px}
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:10px;box-shadow:4px 4px 0 var(--shadow);padding:12px 14px 14px}
+.card .head{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:8px}
+.card .use{color:var(--ink-soft);font-size:11.5px;margin:0 0 8px}
+.row{display:grid;grid-template-columns:11ch 1fr 8ch;gap:8px;align-items:center;margin:2px 0}
+.row span:first-child{color:var(--ink-soft)}
+.row output{text-align:right}
+input[type=range]{width:100%;accent-color:var(--ink)}
+select{font:inherit}
+canvas{display:block;width:100%;height:90px;margin-top:10px;border:1.5px solid var(--rule);border-radius:6px;background:var(--bg)}
+.wave-note{font-size:11px;color:var(--ink-soft);margin-top:2px}
+button{font:inherit;font-size:12px;padding:4px 10px;cursor:pointer;background:var(--paper);color:var(--ink);
+  border:1.5px solid var(--ink);border-radius:6px;box-shadow:2px 2px 0 var(--shadow);transition:transform 60ms,box-shadow 60ms}
+button:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--shadow)}
+button:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--shadow);background:var(--tps)}
+button.save{background:var(--tps);font-weight:500}
+button:focus-visible{outline:2px solid var(--constraint);outline-offset:2px}
+.pad{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}
+#wheel{margin-top:10px;height:70px;border:2px dashed var(--ink);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);user-select:none}
+#status{color:var(--ink-soft)}
+textarea{width:100%;height:150px;font:11.5px/1.4 'Roboto Mono', monospace;margin-top:8px;border:1.5px solid var(--rule);border-radius:6px;padding:8px;background:var(--paper);color:var(--ink)}
+section{margin-top:22px}
+@media (max-width:600px){
+  header,main{padding-left:16px;padding-right:16px}
+  .grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Sound designer</h1>
+  <p class="lede">Shape the map's sounds, made on the spot (no files). Changes are kept in this browser; <b>Save</b> writes sound-settings.json: put it in the sounds folder and I read it into the map.</p>
+  <div class="bar">
+    <label>back pitch <input id="backRate" type="range" min="0.4" max="1" step="0.01"> <output id="backRateOut"></output></label>
+    <label><input id="reverseGlide" type="checkbox"> back reverses the glide</label>
+    <label>master <input id="master" type="range" min="0" max="1.5" step="0.01"> <output id="masterOut"></output></label>
+    <button class="save" id="save" type="button">Save sound-settings.json</button>
+    <button id="load" type="button">Load…</button>
+    <button id="reset" type="button">Reset all</button>
+    <span id="status"></span>
+  </div>
+</header>
+<main>
+  <h2>Try them as on the map</h2>
+  <div class="pad">
+    <button type="button" data-try="select">Select a box</button>
+    <button type="button" data-try="select" data-back>Leave the selection</button>
+    <button type="button" data-try="click">Other button</button>
+    <button type="button" data-try="fold">Open the legend</button>
+    <button type="button" data-try="fold" data-back>Close the legend</button>
+    <button type="button" data-try="tick">Zoom in</button>
+    <button type="button" data-try="tick" data-back>Zoom out</button>
+  </div>
+  <div id="wheel">scroll here: up = zoom in, down = zoom out (at most one tick every 120ms, as on the map)</div>
+
+  <div class="grid" id="cards"></div>
+
+  <section>
+    <h2>Settings <small>(what Save writes)</small></h2>
+    <textarea id="json" readonly></textarea>
+  </section>
+</main>
+
+<script>
+(function(){
+  // ---- the synth: the same function goes into the map (index.html) ----
+  // one sound = a tone (sine or triangle, with an optional octave above it) and / or a burst of
+  // filtered noise, under one envelope: a linear fade-in (no spike at the start) and an
+  // exponential tail. The tone can glide in pitch; back = lower (and the glide reversed, if set)
+  function voice(ctx, dest, p, back, g){
+    var t = ctx.currentTime, k = back ? g.backRate : 1;
+    var end = t + p.attack + p.decay;
+    var env = ctx.createGain(), lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = p.cutoff; lp.Q.value = 0.5;
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(p.volume * g.master, t + p.attack);
+    env.gain.exponentialRampToValueAtTime(0.0001, end);
+    lp.connect(env); env.connect(dest);
+    var glide = back && g.reverseGlide ? 1/p.glide : p.glide;
+    function tone(mult, amount){
+      if(amount <= 0) return;
+      var o = ctx.createOscillator(), a = ctx.createGain(), f0 = p.freq * k * mult;
+      o.type = p.wave;
+      o.frequency.setValueAtTime(f0, t);
+      if(glide !== 1) o.frequency.exponentialRampToValueAtTime(f0 * glide, t + Math.max(p.glideTime, 0.001));
+      a.gain.value = amount;
+      o.connect(a); a.connect(lp);
+      o.start(t); o.stop(end + 0.02);
+    }
+    tone(1, p.tone);
+    tone(2, p.tone * p.harmonic);
+    if(p.noise > 0){
+      var len = Math.ceil(ctx.sampleRate * (p.attack + p.decay + 0.03));
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+      for(var i = 0; i < len; i++) d[i] = Math.random()*2 - 1;
+      var s = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), n = ctx.createGain();
+      s.buffer = buf;
+      bp.type = 'bandpass'; bp.frequency.value = p.noiseFreq * k; bp.Q.value = p.noiseQ;
+      n.gain.value = p.noise;
+      s.connect(bp); bp.connect(n); n.connect(lp);
+      s.start(t); s.stop(end + 0.02);
+    }
+    return end - t;
+  }
+
+  // ---- settings ----
+  var DEFAULTS = {
+    backRate:0.7, reverseGlide:true, master:1,
+    sounds:{
+      select:{wave:'sine', freq:620, glide:0.82, glideTime:0.06, tone:1, harmonic:0.15, noise:0, noiseFreq:1500, noiseQ:1, cutoff:4000, attack:0.006, decay:0.12, volume:0.35},
+      click: {wave:'sine', freq:480, glide:0.9,  glideTime:0.04, tone:1, harmonic:0.1,  noise:0, noiseFreq:1500, noiseQ:1, cutoff:3000, attack:0.004, decay:0.06, volume:0.22},
+      fold:  {wave:'sine', freq:520, glide:1.25, glideTime:0.09, tone:1, harmonic:0.1,  noise:0, noiseFreq:1500, noiseQ:1, cutoff:3500, attack:0.008, decay:0.14, volume:0.28},
+      tick:  {wave:'sine', freq:900, glide:1,    glideTime:0.01, tone:0, harmonic:0,    noise:1, noiseFreq:900,  noiseQ:1.2, cutoff:8000, attack:0.001, decay:0.012, volume:0.35}
+    }
+  };
+  var USES = {
+    select:'a box, an approach button or a picture; back = leaving a selection',
+    click:'any other button',
+    fold:'legend toggle, folds, pictures tab, card; back = closing or hiding',
+    tick:'mouse-wheel zoom; back = zooming out'
+  };
+  // [key, label, min, max, step]
+  var SLIDERS = [
+    ['freq','pitch Hz',100,2000,1], ['glide','glide ×',0.5,2,0.01], ['glideTime','glide s',0.001,0.3,0.001],
+    ['tone','tone',0,1,0.01], ['harmonic','octave',0,1,0.01],
+    ['noise','noise',0,1,0.01], ['noiseFreq','noise Hz',100,6000,10], ['noiseQ','noise Q',0.3,12,0.1],
+    ['cutoff','low-pass Hz',300,12000,10],
+    ['attack','fade-in s',0.0005,0.05,0.0005], ['decay','tail s',0.005,0.6,0.001], ['volume','volume',0,1,0.01]
+  ];
+  var KEY = 'qrf-sound-designer';
+  var S = clone(DEFAULTS);
+  try { var kept = JSON.parse(localStorage.getItem(KEY)); if(kept) S = merge(clone(DEFAULTS), kept); } catch(err){}
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  function merge(a, b){
+    Object.keys(b || {}).forEach(function(k){
+      if(b[k] && typeof b[k] === 'object' && a[k] && typeof a[k] === 'object') merge(a[k], b[k]); else a[k] = b[k];
+    });
+    return a;
+  }
+
+  // ---- audio ----
+  var ctx = new (window.AudioContext || window.webkitAudioContext)();
+  document.addEventListener('pointerdown', function(){ if(ctx.state === 'suspended') ctx.resume(); }, true);
+  function play(name, back){
+    if(ctx.state === 'suspended') ctx.resume();
+    voice(ctx, ctx.destination, S.sounds[name], back, S);
+  }
+
+  // ---- cards ----
+  var cards = document.getElementById('cards'), draws = {};
+  Object.keys(S.sounds).forEach(function(name){
+    var p = S.sounds[name], card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<div class="head"><h2>' + name + '</h2><span>' +
+      '<button type="button" data-play>play</button> <button type="button" data-play data-back>back</button> ' +
+      '<button type="button" data-default>default</button></span></div><p class="use">' + USES[name] + '</p>';
+    card.querySelector('[data-play]').addEventListener('click', function(){ play(name, false); });
+    card.querySelector('[data-play][data-back]').addEventListener('click', function(){ play(name, true); });
+    var waveRow = document.createElement('label');
+    waveRow.className = 'row';
+    waveRow.innerHTML = '<span>wave</span><select><option>sine</option><option>triangle</option></select><output></output>';
+    var sel = waveRow.querySelector('select');
+    card.appendChild(waveRow);
+    var inputs = {};
+    SLIDERS.forEach(function(s){
+      var row = document.createElement('label');
+      row.className = 'row';
+      row.innerHTML = '<span>' + s[1] + '</span><input type="range" min="' + s[2] + '" max="' + s[3] + '" step="' + s[4] + '"><output></output>';
+      var inp = row.querySelector('input'), out = row.querySelector('output');
+      inputs[s[0]] = {inp:inp, out:out};
+      inp.addEventListener('input', function(){ p[s[0]] = parseFloat(inp.value); out.textContent = inp.value; changed(name); });
+      inp.addEventListener('change', function(){ play(name, false); });   // hear it when the slider is let go
+      card.appendChild(row);
+    });
+    sel.addEventListener('change', function(){ p.wave = sel.value; changed(name); play(name, false); });
+    var canvas = document.createElement('canvas'), note = document.createElement('div');
+    note.className = 'wave-note';
+    card.appendChild(canvas); card.appendChild(note);
+    function fill(){
+      sel.value = p.wave;
+      SLIDERS.forEach(function(s){ inputs[s[0]].inp.value = p[s[0]]; inputs[s[0]].out.textContent = p[s[0]]; });
+    }
+    card.querySelector('[data-default]').addEventListener('click', function(){
+      S.sounds[name] = p = merge(p, clone(DEFAULTS.sounds[name]));
+      fill(); changed(name); play(name, false);
+    });
+    card.fill = fill;
+    cards.appendChild(card);
+    fill();
+    draws[name] = function(){ drawWave(name, canvas, note); };
+  });
+
+  // render the sound offline and draw its waveform, so the start can be checked for a spike
+  var drawTimers = {};
+  function drawWave(name, canvas, note){
+    var p = S.sounds[name], dur = p.attack + p.decay + 0.02, rate = 44100;
+    var off = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, Math.ceil(rate*dur), rate);
+    voice(off, off.destination, p, false, S);
+    var done = function(buf){
+      var d = buf.getChannelData(0), W = canvas.clientWidth, H = canvas.clientHeight, dpr = window.devicePixelRatio || 1;
+      canvas.width = W*dpr; canvas.height = H*dpr;
+      var c = canvas.getContext('2d');
+      c.scale(dpr, dpr);
+      c.strokeStyle = '#cfcabb'; c.beginPath(); c.moveTo(0, H/2); c.lineTo(W, H/2); c.stroke();
+      var peak = 0, peakAt = 0;
+      for(var i = 0; i < d.length; i++) if(Math.abs(d[i]) > peak){ peak = Math.abs(d[i]); peakAt = i; }
+      var scale = (H/2 - 4) / Math.max(peak, 0.05);
+      c.fillStyle = '#2b3440';
+      var per = d.length / W;
+      for(var x = 0; x < W; x++){
+        var lo = 0, hi = 0;
+        for(var j = Math.floor(x*per); j < Math.floor((x+1)*per); j++){ lo = Math.min(lo, d[j]); hi = Math.max(hi, d[j]); }
+        c.fillRect(x, H/2 - hi*scale, 1, Math.max(1, (hi - lo)*scale));
+      }
+      note.textContent = 'length ' + Math.round(dur*1000) + ' ms · loudest at ' + (peakAt/rate*1000).toFixed(1) + ' ms (peak ' + peak.toFixed(2) + ')';
+    };
+    var r = off.startRendering();
+    if(r && r.then) r.then(done); else off.oncomplete = function(e){ done(e.renderedBuffer); };
+  }
+
+  // ---- globals, saving ----
+  function bindGlobal(id, key){
+    var inp = document.getElementById(id), out = document.getElementById(id + 'Out');
+    inp.value = S[key]; out.textContent = S[key];
+    inp.addEventListener('input', function(){ S[key] = parseFloat(inp.value); out.textContent = inp.value; changed(); });
+  }
+  bindGlobal('backRate', 'backRate');
+  bindGlobal('master', 'master');
+  var rev = document.getElementById('reverseGlide');
+  rev.checked = S.reverseGlide;
+  rev.addEventListener('change', function(){ S.reverseGlide = rev.checked; changed(); });
+
+  var json = document.getElementById('json'), status = document.getElementById('status');
+  function changed(name){
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(err){}
+    json.value = JSON.stringify(S, null, 2);
+    (name ? [name] : Object.keys(draws)).forEach(function(n){
+      clearTimeout(drawTimers[n]);
+      drawTimers[n] = setTimeout(draws[n], 60);
+    });
+  }
+  changed();
+  window.addEventListener('resize', function(){ changed(); });
+
+  document.getElementById('save').addEventListener('click', function(){
+    var text = JSON.stringify(S, null, 2);
+    if(window.showSaveFilePicker){
+      window.showSaveFilePicker({suggestedName:'sound-settings.json', types:[{description:'JSON', accept:{'application/json':['.json']}}]})
+        .then(function(h){ return h.createWritable(); })
+        .then(function(w){ return w.write(text).then(function(){ return w.close(); }); })
+        .then(function(){ status.textContent = 'saved'; })
+        .catch(function(err){ if(err && err.name !== 'AbortError') download(text); });
+    } else download(text);
+  });
+  function download(text){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], {type:'application/json'}));
+    a.download = 'sound-settings.json';
+    a.click();
+    status.textContent = 'downloaded: move it into the sounds folder';
+  }
+  document.getElementById('load').addEventListener('click', function(){
+    var f = document.createElement('input');
+    f.type = 'file'; f.accept = '.json,application/json';
+    f.onchange = function(){
+      if(!f.files[0]) return;
+      f.files[0].text().then(function(t){
+        S = merge(clone(DEFAULTS), JSON.parse(t));
+        refill(); status.textContent = 'loaded';
+      }).catch(function(){ status.textContent = 'could not read that file'; });
+    };
+    f.click();
+  });
+  document.getElementById('reset').addEventListener('click', function(){
+    if(!confirm('Reset every sound to its default?')) return;
+    S = clone(DEFAULTS);
+    refill();
+  });
+  // after S was replaced: rebuild the page from it
+  function refill(){
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(err){}
+    location.reload();
+  }
+
+  // ---- test pad ----
+  Array.prototype.forEach.call(document.querySelectorAll('[data-try]'), function(b){
+    b.addEventListener('click', function(){ play(b.dataset.try, b.hasAttribute('data-back')); });
+  });
+  var lastTick = 0;
+  document.getElementById('wheel').addEventListener('wheel', function(ev){
+    ev.preventDefault();
+    if(!ev.deltaY) return;
+    var now = Date.now();
+    if(now - lastTick < 120) return;
+    lastTick = now;
+    if(ctx.state === 'running') play('tick', ev.deltaY > 0);
+  }, {passive:false});
+})();
+</script>
+</body>
+</html>
