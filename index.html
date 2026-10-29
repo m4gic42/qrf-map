@@ -723,7 +723,9 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
       {selector:'node[kind="tps"]', style:{'padding':'14px'}},
       {selector:'node[kind="outcome"]', style:{'font-weight':500}},
       {selector:'node[kind="open"]', style:{'border-style':'dashed','font-style':'italic'}},
-      {selector:'node[kind="constraint"]', style:{'font-weight':500}},
+      // the hats (P̂, x̂) stick out above the line, and Cytoscape clips a label to its line boxes
+      // at some zoom levels: taller lines leave room for them
+      {selector:'node[kind="constraint"]', style:{'font-weight':500,'line-height':1.7}},
       {selector:'node.shadow', style:{
         'background-color':p.shadow,'border-color':p.shadow,'border-style':'solid',
         'text-opacity':0,'events':'no','z-index':1
