@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Routes through the Unified Algebraic Approach to QRF</title>
+<meta name="author" content="Alberto Spalvieri">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet"><!-- KaTeX: renders $...$ in the band and the selection card (the map itself is a canvas, no LaTeX there) -->
@@ -94,6 +95,8 @@ main{position:absolute;inset:0;
 }
 #cy{position:absolute;inset:0}
 
+/* byline under the title */
+h1 .by{display:block;margin-top:2px;font-size:0.55em;font-weight:400;color:var(--ink-soft)}
 h1{
   grid-area:title;text-align:center;
   font-weight:700;
@@ -103,7 +106,9 @@ h1{
   margin:0;
 }
 .lede{color:var(--ink-soft);margin:0;font-size:0.89em}   /* same size as the legend lines */
-.lede + .lede{margin-top:6px}
+/* the approach buttons with, on one line below them, the abbreviations */
+.ends-body{flex:1;min-width:0}
+.abbr{margin:6px 0 0;color:var(--ink-soft);font-size:0.89em;line-height:1.4}
 h2{font-size:0.86em;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 10px}
 /* legend headings are fold buttons, but only act as such on small screens (see the media query) */
 .fold{font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;
@@ -329,6 +334,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   h1{font-size:1.35em;text-align:left}
   section{padding:10px 0 0;margin-top:12px;border-left:0;border-top:2px dashed var(--rule)}
   section.ends{display:block}
+  .abbr{margin-top:8px}
   section.ends h2{margin-bottom:10px;white-space:normal}
   .routes button{white-space:normal;text-align:left}
   .legend{gap:6px}
@@ -372,13 +378,11 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
        The endpoint list under "Approaches reproduced" is generated from N (script below). -->
   <div id="band">
   <aside id="legend">
-    <h1>Routes through the Unified Algebraic Approach to QRF</h1>
+    <h1>Routes through the Unified Algebraic Approach to QRF<span class="by">by Alberto Spalvieri</span></h1>
 
     <section class="how">
       <h2>How it works</h2>
-      <p class="lede">Every path from the top down to a framework is one consistent set of choices. Click <b>any box</b> to isolate the follwing and past route.</p>
-      <p class="lede">OP: Operational. CMP: Compositional. PN: Perspective Neutral. QIT: Quantum Information.</p>
-    </section>
+      <p class="lede">Every path from the top down to a framework is one consistent set of choices. Click <b>any box</b> to isolate the follwing and past route.</p>    </section>
 
     <!-- on small screens the three legends fold to their heading when the band would not fit -->
     <section class="colours">
@@ -410,7 +414,10 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 
     <section class="ends">
       <h2>Approaches reproduced</h2>
-      <div class="routes" id="routes"></div>
+      <div class="ends-body">
+        <div class="routes" id="routes"></div>
+        <p class="abbr">OP: Operational · CMP: Compositional/Extra Particle · PN: Perspective Neutral · QIT: Quantum Information</p>
+      </div>
     </section>
   </aside>
     <button id="toggle" type="button" aria-controls="legend" aria-expanded="true" aria-label="Hide legend" title="Hide legend">
