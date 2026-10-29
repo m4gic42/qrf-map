@@ -6,11 +6,7 @@
 <title>Routes through the Unified Algebraic Approach to QRF</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-<!-- the combining hat of P̂, x̂ (U+0302) is in none of the subsets above, so each system drew it from
-     its own fallback font (on Linux placed too high and clipped): load Roboto Mono's own hat -->
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&text=%CC%82&display=swap" rel="stylesheet">
-<!-- KaTeX: renders $...$ in the band and the selection card (the map itself is a canvas, no LaTeX there) -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet"><!-- KaTeX: renders $...$ in the band and the selection card (the map itself is a canvas, no LaTeX there) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <style>
 /* ==========================================================
@@ -726,7 +722,10 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
       {selector:'node[kind="tps"]', style:{'padding':'14px'}},
       {selector:'node[kind="outcome"]', style:{'font-weight':500}},
       {selector:'node[kind="open"]', style:{'border-style':'dashed','font-style':'italic'}},
-      {selector:'node[kind="constraint"]', style:{'font-weight':500}},
+      // Cytoscape draws a label from an image cut to one font size per line (+2px), and on some systems
+      // the hat of P̂ sits higher than that and was cut off: this padding (of an invisible background)
+      // widens that image only, not the box
+      {selector:'node[kind="constraint"]', style:{'font-weight':500,'text-background-padding':8}},
       {selector:'node.shadow', style:{
         'background-color':p.shadow,'border-color':p.shadow,'border-style':'solid',
         'text-opacity':0,'events':'no','z-index':1
