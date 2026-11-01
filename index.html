@@ -226,7 +226,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
    set from the script, --pics-top); closed, only its tab shows */
 #pics{
   position:absolute;right:0;top:var(--pics-top, calc(var(--band-h) + 16px));z-index:3;
-  width:min(280px, calc(100% - 56px));max-height:calc(100% - var(--pics-top, 0px) - 60px);
+  width:min(300px, calc(100% - 56px));   /* tiles wide enough for "for symmetry-based" on one line */max-height:calc(100% - var(--pics-top, 0px) - 60px);
   display:flex;flex-direction:column;
   background:var(--paper);border:2px solid var(--ink);border-right:0;border-radius:10px 0 0 10px;
   box-shadow:4px 4px 0 var(--shadow);
@@ -245,14 +245,21 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
 .pics-head{display:flex;align-items:baseline;gap:8px;padding:10px 12px 6px;border-bottom:1.5px dashed var(--rule)}
 .pics-head h2{margin:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
 .pics-head span{font-size:11px;color:var(--ink-soft)}
+/* shown only while some miniature is relevant to the selection */
+.pics-note{display:none;margin:0;padding:6px 12px 0;font-size:10px;color:var(--ink-soft)}
+#pics:has(.pic.rel) .pics-note{display:block}
 /* two miniatures a row: wide enough for a title on one or two lines */
 .pgrid{display:grid;grid-template-columns:repeat(2, 1fr);gap:8px;padding:10px 10px 12px;overflow-y:auto}
-.pic{position:relative;border:1.5px solid var(--rule);border-radius:8px;background:var(--paper);
-  transition:border-color 160ms,box-shadow 160ms}
-.pic .thumb{display:block;width:100%;padding:5px 6px 6px;margin:0;background:none;border:0;cursor:zoom-in;font:inherit;text-align:left;color:inherit}
+/* a tile is as tall as the other one in its row: the picture takes up the spare height, so no blank
+   space is left under a short title */
+.pic{position:relative;display:flex;flex-direction:column;border:1.5px solid var(--rule);border-radius:8px;background:var(--paper);
+  transition:border-color 160ms,box-shadow 160ms,transform 160ms}
+.pic .thumb{flex:1;display:flex;flex-direction:column;width:100%;padding:5px 6px 6px;margin:0;background:none;border:0;cursor:zoom-in;font:inherit;text-align:left;color:inherit}
 /* nothing selected: every miniature pale; hovered, open or relevant to the selection: in colour */
-.pic img{display:block;width:100%;height:38px;object-fit:contain;
+.pic img{display:block;width:100%;flex:1 1 0;height:0;min-height:38px;object-fit:contain;
   filter:grayscale(.8);opacity:.42;transition:filter 160ms,opacity 160ms}
+/* relevant to the selection: slightly larger, in its place (the grid gap leaves room for it) */
+.pic.rel{transform:scale(1.05);z-index:1}
 .pic .pt{display:block;margin-top:4px;font-size:10px;line-height:1.25;color:var(--ink-soft)}
 .pic:hover img,.pic.open img,.pic.rel img{filter:none;opacity:1}
 .pic.rel{border-color:var(--ink);box-shadow:2px 2px 0 var(--shadow)}
@@ -448,6 +455,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
         Pictures
       </button>
       <div class="pics-head"><h2>Pictures</h2><span>click to enlarge</span></div>
+      <p class="pics-note">Highlighted: related to the selection.</p>
       <div class="pgrid" id="pics-list" inert></div>
     </div>
   </main>
@@ -1503,7 +1511,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     tile.className = 'pic';
     b.type = 'button'; b.className = 'thumb'; b.title = 'Enlarge';
     img.alt = p.title; img.dataset.src = 'Pictures/thumbs/' + p.file;   // loaded when the panel first opens
-    t.className = 'pt'; t.textContent = p.title;
+    t.className = 'pt'; t.textContent = p.title.replace(/-/g, '-⁠');   // word joiner: "symmetry-based" never splits
     b.appendChild(img); b.appendChild(t);
     b.addEventListener('click', function(){ openViewer(i); });
     tile.appendChild(b);
