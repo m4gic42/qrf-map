@@ -1528,9 +1528,14 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   });
 
   // a miniature is in colour when one of its boxes is the selected box itself (or one of the
-  // boxes a picture's map button selected); the rest of the route does not count
+  // boxes a picture's map button selected); for a final approach (outcome or open), the boxes of
+  // its own branch above it count too, but not those reached through equivalence links
   function updatePics(){
     var picked = cy.nodes('.seed');
+    if(seed && (seed.data('kind') === 'outcome' || seed.data('kind') === 'open')){
+      for(var up = seed.incomers('edge.tree').sources(); up.nonempty(); up = up.incomers('edge.tree').sources())
+        picked = picked.union(up);
+    }
     PICS.forEach(function(p){
       var rel = !!current && picBoxes(p).some(function(n){ return picked.anySame(n); });
       p.tile.classList.toggle('rel', rel);
