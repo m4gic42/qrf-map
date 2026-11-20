@@ -929,8 +929,10 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
       (levels[y] = levels[y] || []).push(n);
     });
     var ys = Object.keys(levels).map(Number).sort(function(a, b){ return a - b; });
-    var x0 = seed ? home[seed.id()].x
-                  : (home[seedLink.source().id()].x + home[seedLink.target().id()].x)/2;
+    // centred under the selected box, the selected link, or (a picture's boxes) all the seeds
+    var seeds = seed || (seedLink ? seedLink.connectedNodes() : cy.nodes('.seed'));
+    var x0 = 0;
+    seeds.forEach(function(n){ x0 += home[n.id()].x / seeds.length; });
     var y = ys[0], prevH = 0;
     ys.forEach(function(ly, i){
       var row = levels[ly].sort(function(a, b){ return home[a.id()].x - home[b.id()].x; });
@@ -1269,6 +1271,8 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   // from the paper opens the map with it selected. Ids are written with - for _ and + for ~,
   // characters LaTeX leaves alone; either spelling is read back
   function linkKey(id){ return id.replace(/_/g,'-').replace(/~/g,'+'); }
+  // a picture's map button has an address too: #pic- and its title, e.g. #pic-perspectival
+  function picKey(p){ return p.title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
   function setHash(id){
     try { history.replaceState(null, '', id ? '#' + linkKey(id) : location.pathname + location.search); }
     catch(err){}
@@ -1276,6 +1280,8 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   function fromHash(){
     var key = linkKey(decodeURIComponent(location.hash.slice(1)));
     if(!key) return;
+    var pic = PICS.filter(function(p){ return 'pic-' + picKey(p) === key; })[0];
+    if(pic){ showPic(pic); return; }
     var hit = cy.elements('node[kind], edge.link').not('.shadow').filter(function(e){ return linkKey(e.id()) === key; });
     if(!hit.length) return;
     if(hit.isNode()){ if(!(seed && seed.same(hit))) select(hit); }
@@ -1623,7 +1629,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     if(p.routes === false) keep = nodes.union(nodes.edgesWith(nodes).filter('.link'));
     else nodes.forEach(function(n){ keep = keep.union(route(n)); });
     showOnly(keep, nodes);
-    setHash(null);   // a picture's group of boxes has no address of its own
+    setHash('pic-' + picKey(p));
     current = keep;
     seed = null;
     seedLink = null;
