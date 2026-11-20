@@ -1265,7 +1265,26 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     if(audio && audio.state === 'running') sound('tick', out);
   }, {passive:true});
 
+  // the selection lives in the address: #L-ogpn (a box) or #L-ogpn+L-qitg (a link), so a link
+  // from the paper opens the map with it selected. Ids are written with - for _ and + for ~,
+  // characters LaTeX leaves alone; either spelling is read back
+  function linkKey(id){ return id.replace(/_/g,'-').replace(/~/g,'+'); }
+  function setHash(id){
+    try { history.replaceState(null, '', id ? '#' + linkKey(id) : location.pathname + location.search); }
+    catch(err){}
+  }
+  function fromHash(){
+    var key = linkKey(decodeURIComponent(location.hash.slice(1)));
+    if(!key) return;
+    var hit = cy.elements('node[kind], edge.link').not('.shadow').filter(function(e){ return linkKey(e.id()) === key; });
+    if(!hit.length) return;
+    if(hit.isNode()){ if(!(seed && seed.same(hit))) select(hit); }
+    else if(!(seedLink && seedLink.same(hit))) selectLink(hit);
+  }
+  window.addEventListener('hashchange', fromHash);
+
   function clear(){
+    setHash(null);
     current = null;
     seed = null;
     seedLink = null;
@@ -1285,6 +1304,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   }
 
   function select(node){
+    setHash(node.id());
     var keep = route(node);
     showOnly(keep, node);
     current = keep;
@@ -1369,6 +1389,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
   var seedLink = null;
   function selectLink(edge){
     var a = edge.source(), b = edge.target(), info = LINKS[edge.data('eq')] || {join:' – ', note:''};
+    setHash(edge.id());
     var keep = route(a).union(route(b));
     showOnly(keep, a.union(b));
     current = keep;
@@ -1602,6 +1623,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     if(p.routes === false) keep = nodes.union(nodes.edgesWith(nodes).filter('.link'));
     else nodes.forEach(function(n){ keep = keep.union(route(n)); });
     showOnly(keep, nodes);
+    setHash(null);   // a picture's group of boxes has no address of its own
     current = keep;
     seed = null;
     seedLink = null;
@@ -1699,6 +1721,9 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     if(current){ computeMoves(); placeNodes(); }   // stacked on an upright phone, spread out otherwise
     refit();
   });
+
+  // opened from a link with #id: select that box or link
+  fromHash();
 })();
 </script>
 </body>
