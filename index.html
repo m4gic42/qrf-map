@@ -1641,7 +1641,7 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     placeNodes();
     refit();
     Array.prototype.forEach.call(document.querySelectorAll('.routes button'), function(b){
-      b.setAttribute('aria-pressed','false');
+      b.setAttribute('aria-pressed', String(b.dataset.pic === picKey(p)));
     });
   }
 
@@ -1674,6 +1674,17 @@ button:focus-visible,#reset:focus-visible{outline:2px solid var(--constraint);ou
     b.textContent = texLabel(n.label);
     b.addEventListener('click',function(){ select(cy.getElementById(n.id)); });
     rows[i < split ? 0 : 1].appendChild(b);
+  });
+  // the perspectival approach is not one box but all of them: its button, at the end of the
+  // second row, does what the Perspectival picture's map button does
+  PICS.filter(function(p){ return picKey(p) === 'perspectival'; }).forEach(function(p){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.pic = picKey(p);
+    b.setAttribute('aria-pressed','false');
+    b.textContent = p.title;
+    b.addEventListener('click',function(){ showPic(p); });
+    rows[1].appendChild(b);
   });
   renderTex(document.getElementById('legend'));
 
